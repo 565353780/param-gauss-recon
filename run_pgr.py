@@ -7,7 +7,7 @@ parser.add_argument(
     "input",
     help="xyz format point cloud input, this should be the one to construct the final query octree",
 )
-parser.add_argument("-s", "--sample", type=int, default=40000, help="sample point num")
+parser.add_argument("-s", "--sample", type=int, default=60000, help="sample point num")
 parser.add_argument(
     "-wk", "--width_k", type=int, default=7, help="k in knn for width estimation"
 )
