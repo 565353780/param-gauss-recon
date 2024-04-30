@@ -32,7 +32,9 @@ class Reconstructor(object):
         save_pcd_file_path = input
         if sample_point_num is not None:
             if sample_point_num > 0:
-                save_pcd_file_path = input.replace(
+                pcd_file_name = input.split("/")[-1]
+
+                save_pcd_file_path = "./output/sample_pcd/" + pcd_file_name.replace(
                     ".xyz", "_sample-" + str(sample_point_num) + ".xyz"
                 )
 
