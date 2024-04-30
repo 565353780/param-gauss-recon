@@ -35,8 +35,10 @@ class Reconstructor(object):
             if sample_point_num > 0:
                 pcd_file_name = input.split("/")[-1]
 
+                pcd_file_type = '.' + pcd_file_name.split('.')[-1]
+
                 save_pcd_file_path = "./output/sample_pcd/" + pcd_file_name.replace(
-                    ".xyz", "_sample-" + str(sample_point_num) + ".xyz"
+                    pcd_file_type, "_sample-" + str(sample_point_num) + ".xyz"
                 )
 
                 print("[INFO][Reconstructor::reconstructSurface]")
