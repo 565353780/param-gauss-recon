@@ -1,6 +1,7 @@
 import os
 import shutil
 from time import time
+from typing import Union
 from os.path import join, basename
 
 from param_gauss_recon.Config.path import EXPORT_QUERY_EXE, LOAD_QUERY_EXE
@@ -12,23 +13,34 @@ class Reconstructor(object):
         self.solver = Solver()
         return
 
-    def reconstructSurface(self, args) -> bool:
-        PARAM_MIDFIX = f"_k_{args.width_k}_min_{args.width_min}_max_{args.width_max}_alpha_{args.alpha}_depth_min_{args.min_depth}_depth_max_{args.min_depth}_"
+    def reconstructSurface(
+        self,
+        input: str,
+        width_k: int = 7,
+        width_max: float = 0.015,
+        width_min: float = 0.0015,
+        alpha: float = 1.05,
+        max_iters: Union[int, None] = None,
+        max_depth: int = 10,
+        min_depth: int = 1,
+        save_r: Union[str, None] = None,
+    ) -> bool:
+        PARAM_MIDFIX = f"_k_{width_k}_min_{width_min}_max_{width_max}_alpha_{alpha}_depth_min_{min_depth}_depth_max_{min_depth}_"
         setup_str = (
             "---------Settings---------\n"
-            + f"min depth:   {args.min_depth}\n"
-            + f"max depth:   {args.max_depth}\n"
-            + f"max iters:   {args.max_iters}\n"
-            + f"width_k:     {args.width_k}\n"
-            + f"width_min:   {args.width_min}\n"
-            + f"width_max:   {args.width_max}\n"
-            + f"alpha:       {args.alpha}\n"
+            + f"min depth:   {min_depth}\n"
+            + f"max depth:   {max_depth}\n"
+            + f"max iters:   {max_iters}\n"
+            + f"width_k:     {width_k}\n"
+            + f"width_min:   {width_min}\n"
+            + f"width_max:   {width_max}\n"
+            + f"alpha:       {alpha}\n"
             + "---------Settings---------"
         )
 
         print(setup_str)
 
-        in_filename = args.input
+        in_filename = input
         data_index = in_filename.split("/")[-1][:-4]
 
         results_folder = "results/"
@@ -56,7 +68,7 @@ class Reconstructor(object):
 
         # build octree
         TIME_START_OCTREE = time()
-        build_octree_cmd = f"{EXPORT_QUERY_EXE} -i {args.input} -o {sample_file_prefix} -d {args.max_depth} -m {args.min_depth} "
+        build_octree_cmd = f"{EXPORT_QUERY_EXE} -i {input} -o {sample_file_prefix} -d {max_depth} -m {min_depth} "
         print(f"\n[EXECUTING] {build_octree_cmd}\n")
         os.system(build_octree_cmd)
         TIME_END_OCTREE = time()
@@ -70,12 +82,12 @@ class Reconstructor(object):
             solve_sample_file_prefix + "_normalized.npy",
             sample_file_prefix + "_for_query.npy",
             solve_file_prefix + PARAM_MIDFIX,
-            args.width_k,
-            args.width_max,
-            args.width_min,
-            args.alpha,
-            args.max_iters,
-            args.save_r,
+            width_k,
+            width_max,
+            width_min,
+            alpha,
+            max_iters,
+            save_r,
         )
         TIME_END_SOLVE = time()
 
@@ -86,7 +98,7 @@ class Reconstructor(object):
             isoval = eval(isoval)
 
         recon_cmd = (
-            f"{LOAD_QUERY_EXE} -i {in_filename} -d {args.max_depth} -m {args.min_depth} "
+            f"{LOAD_QUERY_EXE} -i {in_filename} -d {max_depth} -m {min_depth} "
             + f"--grid_val {solve_file_prefix}{PARAM_MIDFIX}eval_grid.npy "
             + f"--grid_width {solve_file_prefix}{PARAM_MIDFIX}grid_width.npy "
             + f"--isov {isoval} "
