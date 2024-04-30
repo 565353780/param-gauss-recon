@@ -5,17 +5,20 @@ from typing import Union
 from os.path import join, basename
 
 from param_gauss_recon.Config.path import EXPORT_QUERY_EXE, LOAD_QUERY_EXE
+from param_gauss_recon.Module.pcd_sampler import PcdSampler
 from param_gauss_recon.Module.solver import Solver
 
 
 class Reconstructor(object):
     def __init__(self) -> None:
+        self.pcd_sampler = PcdSampler()
         self.solver = Solver()
         return
 
     def reconstructSurface(
         self,
         input: str,
+        sample_point_num: Union[int, None] = None,
         width_k: int = 7,
         width_max: float = 0.015,
         width_min: float = 0.0015,
@@ -26,6 +29,23 @@ class Reconstructor(object):
         cpu: bool = False,
         save_r: Union[str, None] = None,
     ) -> bool:
+        save_pcd_file_path = input
+        if sample_point_num is not None:
+            if sample_point_num > 0:
+                save_pcd_file_path = input.replace(
+                    ".xyz", "_sample-" + str(sample_point_num) + ".xyz"
+                )
+
+                print("[INFO][Reconstructor::reconstructSurface]")
+                print("\t start toFPSPcdFile...")
+                if not self.pcd_sampler.toFPSPcdFile(
+                    input, sample_point_num, save_pcd_file_path
+                ):
+                    print("[WARN][Reconstructor::reconstructSurface]")
+                    print("\t toFPSPcdFile failed!")
+                    print("\t try to start reconstruct with the input point cloud...")
+                    save_pcd_file_path = input
+
         PARAM_MIDFIX = f"_k_{width_k}_min_{width_min}_max_{width_max}_alpha_{alpha}_depth_min_{min_depth}_depth_max_{min_depth}_"
         setup_str = (
             "---------Settings---------\n"
@@ -41,7 +61,7 @@ class Reconstructor(object):
 
         print(setup_str)
 
-        in_filename = input
+        in_filename = save_pcd_file_path
         data_index = in_filename.split("/")[-1][:-4]
 
         results_folder = "results/"
@@ -69,7 +89,7 @@ class Reconstructor(object):
 
         # build octree
         TIME_START_OCTREE = time()
-        build_octree_cmd = f"{EXPORT_QUERY_EXE} -i {input} -o {sample_file_prefix} -d {max_depth} -m {min_depth} "
+        build_octree_cmd = f"{EXPORT_QUERY_EXE} -i {save_pcd_file_path} -o {sample_file_prefix} -d {max_depth} -m {min_depth} "
         print(f"\n[EXECUTING] {build_octree_cmd}\n")
         os.system(build_octree_cmd)
         TIME_END_OCTREE = time()
