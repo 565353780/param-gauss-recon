@@ -30,6 +30,7 @@ parser.add_argument(
 parser.add_argument(
     "-md", "--min_depth", type=int, default=1, help="min depth of octree"
 )
+parser.add_argument("--cpu", action="store_true", help="run with cpu")
 parser.add_argument("--save_r", action="store_true", help="save the residual list")
 args = parser.parse_args()
 
@@ -44,5 +45,6 @@ reconstructor.reconstructSurface(
     args.max_iters,
     args.max_depth,
     args.min_depth,
+    args.cpu,
     args.save_r,
 )
