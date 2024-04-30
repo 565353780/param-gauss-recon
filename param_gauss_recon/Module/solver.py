@@ -2,7 +2,6 @@ import numpy as np
 from time import time
 from typing import Union
 
-from param_gauss_recon.Config.device import DEVICE
 from param_gauss_recon.Config.constant import (
     CHUNK_SIZE,
     FLT_TYPE,
@@ -15,11 +14,6 @@ from param_gauss_recon.Method.utils import (
     solve,
     get_query_vals,
 )
-
-if DEVICE == "cpu":
-    cp = None
-else:
-    import cupy as cp
 
 
 class Solver(object):
@@ -37,9 +31,13 @@ class Solver(object):
         width_max: float,
         alpha: float,
         max_iters: Union[int, None] = None,
+        cpu: bool = False,
         save_r: Union[str, None] = None,
     ) -> bool:
-        cpu = DEVICE == "cpu"
+        if cpu:
+            cp = None
+        else:
+            import cupy as cp
 
         out_prefix = output
 

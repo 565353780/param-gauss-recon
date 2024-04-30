@@ -23,6 +23,7 @@ class Reconstructor(object):
         max_iters: Union[int, None] = None,
         max_depth: int = 10,
         min_depth: int = 1,
+        cpu: bool = False,
         save_r: Union[str, None] = None,
     ) -> bool:
         PARAM_MIDFIX = f"_k_{width_k}_min_{width_min}_max_{width_max}_alpha_{alpha}_depth_min_{min_depth}_depth_max_{min_depth}_"
@@ -87,6 +88,7 @@ class Reconstructor(object):
             width_min,
             alpha,
             max_iters,
+            cpu,
             save_r,
         )
         TIME_END_SOLVE = time()
