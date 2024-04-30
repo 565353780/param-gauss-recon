@@ -137,3 +137,6 @@ results
 
 # data
 *.xyz
+*.ply
+*.pcd
+*.obj
