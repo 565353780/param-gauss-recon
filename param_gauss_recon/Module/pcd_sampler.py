@@ -14,9 +14,8 @@ class PcdSampler(object):
     def toFPSPcd(
         self, pcd: o3d.geometry.PointCloud, sample_point_num: int
     ) -> Union[o3d.geometry.PointCloud, None]:
-        if sample_point_num < 1:
-            print("\t sample_point_num:", sample_point_num)
-            return None
+        if np.asarray(pcd.points).shape[0] < sample_point_num:
+            return pcd
 
         down_sample_pcd = downSample(pcd, sample_point_num)
 
@@ -30,6 +29,9 @@ class PcdSampler(object):
     def toFPSPoints(
         self, points: np.ndarray, sample_point_num: int
     ) -> Union[np.ndarray, None]:
+        if points.shape[0] < sample_point_num:
+            return points
+
         pcd = getPointCloud(points)
 
         down_sample_pcd = self.toFPSPcd(pcd, sample_point_num)
