@@ -1,10 +1,12 @@
 import os
 import shutil
+import open3d as o3d
 from time import time
 from typing import Union
 from os.path import join, basename
 
 from param_gauss_recon.Config.path import EXPORT_QUERY_EXE, LOAD_QUERY_EXE
+from param_gauss_recon.Method.path import createFileFolder
 from param_gauss_recon.Module.pcd_sampler import PcdSampler
 from param_gauss_recon.Module.solver import Solver
 
@@ -29,7 +31,6 @@ class Reconstructor(object):
         cpu: bool = False,
         save_r: Union[str, None] = None,
     ) -> bool:
-        save_pcd_file_path = input
         if sample_point_num is not None:
             if sample_point_num > 0:
                 pcd_file_name = input.split("/")[-1]
@@ -47,6 +48,22 @@ class Reconstructor(object):
                     print("\t toFPSPcdFile failed!")
                     print("\t try to start reconstruct with the input point cloud...")
                     save_pcd_file_path = input
+        else:
+            save_pcd_file_path = input
+            if '.xyz' not in input:
+                pcd_file_name = input.split("/")[-1]
+
+                pcd_file_type = '.' + pcd_file_name.split('.')[-1]
+
+                save_pcd_file_path = "./output/sample_pcd/" + pcd_file_name.replace(
+                    pcd_file_type, ".xyz"
+                )
+
+                pcd = o3d.io.read_point_cloud(input)
+
+                createFileFolder(save_pcd_file_path)
+
+                o3d.io.write_point_cloud(save_pcd_file_path, pcd, write_ascii=True)
 
         PARAM_MIDFIX = f"_k_{width_k}_min_{width_min}_max_{width_max}_alpha_{alpha}_depth_min_{min_depth}_depth_max_{min_depth}_"
         setup_str = (
