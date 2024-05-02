@@ -23,60 +23,59 @@ SOFTWARE.
 */
 
 #include "Octree.h"
-#include <iostream>
-#include <algorithm>
-#include <cstring>
-#include <string>
-#include <fstream>
-#include <cstdlib>
 #include <cstdio>
-#include "Geometry.h"
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
+#include <string>
 
 #include "CLI11.hpp"
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
+  std::string inFileName;
+  std::string outFileName;
+  std::string inGridValFileName;
+  std::string inGridWidthFileName;
+  float isovalue = 0.5;
+  int minDepth = 1;
+  int maxDepth = 10;
 
-    std::string ply_suffix(".ply");
-    std::string inFileName;
-    std::string outFileName;
-	std::string inGridValFileName;
-	std::string inGridWidthFileName;
-	float isovalue = 0.5;
-	int minDepth = 1;
-	int maxDepth = 10;
-    
-    CLI::App app("PGRLoadQuery");
-    app.add_option("-i", inFileName, "input filename of xyz format")->required();
-    app.add_option("-o", outFileName, "output filename of ply format")->required();
-	app.add_option("--grid_val", inGridValFileName, "input filename of npy format for grid vals")->required();
-	app.add_option("--grid_width", inGridWidthFileName, "input filename of npy format for grid widths")->required();
-	app.add_option("-m", minDepth, "");
-	app.add_option("-d", maxDepth, "");
-	app.add_option("--isov", isovalue, "isovalue");
+  CLI::App app("PGRLoadQuery");
+  app.add_option("-i", inFileName, "input filename of xyz format")->required();
+  app.add_option("-o", outFileName, "output filename of ply format")
+      ->required();
+  app.add_option("--grid_val", inGridValFileName,
+                 "input filename of npy format for grid vals")
+      ->required();
+  app.add_option("--grid_width", inGridWidthFileName,
+                 "input filename of npy format for grid widths")
+      ->required();
+  app.add_option("-m", minDepth, "");
+  app.add_option("-d", maxDepth, "");
+  app.add_option("--isov", isovalue, "isovalue");
 
-    CLI11_PARSE(app, argc, argv);
+  CLI11_PARSE(app, argc, argv);
 
-	if (maxDepth < minDepth) {
-		cout << "[In PGRLoadQuery] WARNING: minDepth "
-			 << minDepth
-			 << " smaller than maxDepth "
-			 << maxDepth
-			 << ", ignoring given minDepth\n";
-	}
-	
-	Octree tree;
-	tree.setTree(inFileName, maxDepth, minDepth);//1382_seahorse2_p
-	
-	int N_grid = tree.gridDataVector.size();
-	tree.loadImplicitFunctionFromNPY(inGridValFileName, N_grid);
-	tree.loadGridWidthFromNPY(inGridWidthFileName, N_grid);
-	
-	std::cout << "[In PGRLoadQuery] Isovalue: " << isovalue << std::endl;
+  if (maxDepth < minDepth) {
+    cout << "[In PGRLoadQuery] WARNING: minDepth " << minDepth
+         << " smaller than maxDepth " << maxDepth
+         << ", ignoring given minDepth\n";
+  }
 
-	CoredVectorMeshData mesh;
-	tree.GetMCIsoTriangles(isovalue,  &mesh, 0, 1, 0, 0);
-	char fileChar[255];
-	strcpy(fileChar, (outFileName).c_str());
-	tree.writePolygon2(&mesh, fileChar);
-	std::cout << "[In PGRLoadQuery] Polygon Written to " << outFileName << std::endl;
+  Octree tree;
+  tree.setTree(inFileName, maxDepth, minDepth); // 1382_seahorse2_p
+
+  int N_grid = tree.gridDataVector.size();
+  tree.loadImplicitFunctionFromNPY(inGridValFileName, N_grid);
+  tree.loadGridWidthFromNPY(inGridWidthFileName, N_grid);
+
+  std::cout << "[In PGRLoadQuery] Isovalue: " << isovalue << std::endl;
+
+  CoredVectorMeshData mesh;
+  tree.GetMCIsoTriangles(isovalue, &mesh, 0, 1, 0, 0);
+  char fileChar[255];
+  strcpy(fileChar, (outFileName).c_str());
+  tree.writePolygon2(&mesh, fileChar);
+  std::cout << "[In PGRLoadQuery] Polygon Written to " << outFileName
+            << std::endl;
 }
