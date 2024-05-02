@@ -151,6 +151,13 @@ class Reconstructor(object):
         os.system(recon_cmd)
         TIME_END_RECON = time()
 
+        recon_file_basename = recon_file_prefix.split('/')[-1]
+        save_recon_folder_path = './output/recon/' + PARAM_MIDFIX[1:-1] + '/'
+
+        os.makedirs(save_recon_folder_path, exist_ok=True)
+
+        shutil.copyfile("./" + recon_file_prefix + PARAM_MIDFIX + "recon.ply", save_recon_folder_path + recon_file_basename + "_recon_pgr.ply")
+
         print(
             "\033[94m"
             + "[Timer] Note: Some preprocessing (width computation) is actually in the Main part."
