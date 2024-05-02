@@ -57,9 +57,9 @@ int main(int argc, char **argv) {
   CLI11_PARSE(app, argc, argv);
 
   if (maxDepth < minDepth) {
-    cout << "[In PGRLoadQuery] WARNING: minDepth " << minDepth
-         << " smaller than maxDepth " << maxDepth
-         << ", ignoring given minDepth\n";
+    std::cout << "[In PGRLoadQuery] WARNING: minDepth " << minDepth
+              << " smaller than maxDepth " << maxDepth
+              << ", ignoring given minDepth" << std::endl;
   }
 
   Octree tree;
