@@ -15,6 +15,8 @@ class Reconstructor(object):
     def __init__(self) -> None:
         self.pcd_sampler = PcdSampler()
         self.solver = Solver()
+
+        self.PARAM_MIDFIX = None
         return
 
     def reconstructSurface(
@@ -30,6 +32,7 @@ class Reconstructor(object):
         min_depth: int = 1,
         cpu: bool = False,
         save_r: Union[str, None] = None,
+        recon_mesh: bool = True,
     ) -> bool:
         if sample_point_num is not None:
             if sample_point_num > 0:
@@ -70,6 +73,9 @@ class Reconstructor(object):
         PARAM_MIDFIX = f"_k_{width_k}_min_{width_min}_max_{width_max}_alpha_{alpha}_depth_min_{min_depth}_depth_max_{min_depth}_"
         if sample_point_num is not None:
             PARAM_MIDFIX = f"_sample_{sample_point_num}" + PARAM_MIDFIX
+
+        # self.PARAM_MIDFIX is only used for outer call recon results path
+        self.param_midfix = PARAM_MIDFIX
 
         setup_str = (
             "---------Settings---------\n"
@@ -134,8 +140,12 @@ class Reconstructor(object):
             max_iters,
             cpu,
             save_r,
+            recon_mesh,
         )
         TIME_END_SOLVE = time()
+
+        if not recon_mesh:
+            return True
 
         # reconstruction
         TIME_START_RECON = time()
@@ -154,12 +164,14 @@ class Reconstructor(object):
         os.system(recon_cmd)
         TIME_END_RECON = time()
 
-        recon_file_basename = recon_file_prefix.split('/')[-1]
-        save_recon_folder_path = './output/recon/' + PARAM_MIDFIX[1:-1] + '/'
+        # copy recon results to output folder for faster visualization
+        if True:
+            recon_file_basename = recon_file_prefix.split('/')[-1]
+            save_recon_folder_path = './output/recon/' + PARAM_MIDFIX[1:-1] + '/'
 
-        os.makedirs(save_recon_folder_path, exist_ok=True)
+            os.makedirs(save_recon_folder_path, exist_ok=True)
 
-        shutil.copyfile("./" + recon_file_prefix + PARAM_MIDFIX + "recon.ply", save_recon_folder_path + recon_file_basename + "_recon_pgr.ply")
+            shutil.copyfile("./" + recon_file_prefix + PARAM_MIDFIX + "recon.ply", save_recon_folder_path + recon_file_basename + "_recon_pgr.ply")
 
         print(
             "\033[94m"

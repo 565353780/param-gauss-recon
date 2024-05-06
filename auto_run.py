@@ -1,6 +1,6 @@
 import os
 
-folder_path = "./output/gen_pcd_v2/"
+folder_path = "./output/save_itr_27/"
 
 pcd_filename_list = os.listdir(folder_path)
 pcd_filename_list.sort()
@@ -19,3 +19,4 @@ for pcd_filename in pcd_filename_list:
     print("start run:")
     print(cmd)
     os.system(cmd)
+    exit()

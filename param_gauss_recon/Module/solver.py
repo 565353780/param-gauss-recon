@@ -33,6 +33,7 @@ class Solver(object):
         max_iters: Union[int, None] = None,
         cpu: bool = False,
         save_r: Union[str, None] = None,
+        recon_mesh: bool=True,
     ) -> bool:
         if cpu:
             cp = None
@@ -117,6 +118,9 @@ class Solver(object):
         # saving solution as xyz
         out_solve_xyz = out_prefix + "lse.xyz"
         np.savetxt(out_solve_xyz, out_lse_array_npy, fmt="%.8f", delimiter=" ")
+
+        if not recon_mesh:
+            return True
 
         # eval on grid
         TIME_START_EVAL = time()
