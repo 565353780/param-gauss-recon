@@ -68,6 +68,9 @@ class Reconstructor(object):
                 o3d.io.write_point_cloud(save_pcd_file_path, pcd, write_ascii=True)
 
         PARAM_MIDFIX = f"_k_{width_k}_min_{width_min}_max_{width_max}_alpha_{alpha}_depth_min_{min_depth}_depth_max_{min_depth}_"
+        if sample_point_num is not None:
+            PARAM_MIDFIX = f"_sample_{sample_point_num}" + PARAM_MIDFIX
+
         setup_str = (
             "---------Settings---------\n"
             + f"min depth:   {min_depth}\n"

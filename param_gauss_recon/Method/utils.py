@@ -187,12 +187,12 @@ def solve(
     k = -1  # to prevent error message when max_iters == 0
     for k in solve_progress_bar:
         Bp = cnp.matmul(B, p)
-        r_sq = cnp.einsum("i,i", r, r)
+        r_sq = r.dot(r)
 
-        alpha = r_sq / cnp.einsum("i,i", p, Bp)
+        alpha = r_sq / p.dot(Bp)
         xi += alpha * p
         r -= alpha * Bp
-        beta = cnp.einsum("i,i", r, r) / r_sq
+        beta = r.dot(r) / r_sq
         p *= beta
         p += r
 
