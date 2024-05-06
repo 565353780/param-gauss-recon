@@ -4,6 +4,8 @@ from tqdm import tqdm
 from scipy.spatial import KDTree
 from time import time
 
+from param_gauss_recon.Config.constant import EPSILON
+
 
 def load_sample_from_npy(file_path, return_cupy, dtype):
     data = np.load(file_path)
@@ -57,6 +59,7 @@ def get_A(x, y, x_width):
 
     A = x[:, None] - y[None, :]  # [N_query, N_sample, 3]
     dist = cnp.sqrt((A**2).sum(-1))  # [N_query, N_sample], |x^i-y^j|^2
+    dist[dist == 0.0] += EPSILON
 
     # inv_dist = cnp.where(dist > x_width[:, None], 1/dist, 0.) # / 4 / cp.pi
     inv_dist = cnp.where(
