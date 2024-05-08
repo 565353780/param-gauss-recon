@@ -60,7 +60,11 @@ class PcdSampler(object):
             print("\t pcd_file_path:", pcd_file_path)
             return False
 
-        pcd = o3d.io.read_point_cloud(pcd_file_path)
+        if pcd_file_path[-4:] == '.npy':
+            points = np.load(pcd_file_path)
+            pcd = getPointCloud(points)
+        else:
+            pcd = o3d.io.read_point_cloud(pcd_file_path)
 
         down_sample_pcd = self.toFPSPcd(pcd, sample_point_num)
 
