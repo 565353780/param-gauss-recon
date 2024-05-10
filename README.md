@@ -9,7 +9,7 @@ https://github.com/jsnln/ParametricGaussRecon
 ## Setup
 
 ```bash
-conda activate pgr python=3.10
+conda create -n pgr python=3.10
 conda activate pgr
 ./setup.sh
 ```
