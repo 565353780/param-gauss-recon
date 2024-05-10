@@ -2,7 +2,8 @@ import os
 from shutil import copyfile
 
 current_appendix = ''
-folder_path = "/home/chli/chLi/Dataset/MashPcd" + current_appendix + "/ShapeNet/03001627/"
+category_id = '02691156'
+folder_path = "/home/chli/chLi/Dataset/MashPcd" + current_appendix + "/ShapeNet/" + category_id + "/"
 
 if True:
     sample = '20000'
@@ -22,7 +23,7 @@ pcd_filename_list = os.listdir(folder_path)
 pcd_filename_list.sort()
 
 result_folder_path = './output/recon/sample_' + sample + '_k_' + width_k + '_min_' + width_min + '_max_' + width_max + '_alpha_' + alpha + '_depth_min_1_depth_max_1/'
-save_folder_path = "/home/chli/chLi/Dataset/Mash_Recon" + current_appendix + "/ShapeNet/03001627/"
+save_folder_path = "/home/chli/chLi/Dataset/Mash_Recon" + current_appendix + "/ShapeNet/" + category_id + "/"
 os.makedirs(save_folder_path, exist_ok=True)
 
 solved_shape_names = os.listdir(save_folder_path)
