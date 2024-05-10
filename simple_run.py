@@ -1,6 +1,6 @@
 import os
 
-folder_path = "../mash-shape-diffusion/output/sample/save_itr_27-1/"
+folder_path = "../mash-shape-diffusion/output/sample/save_itr_27-v2-1/"
 
 if True:
     sample = '20000'
@@ -11,10 +11,10 @@ if True:
 
 if True:
     sample = '4000'
-    alpha = '2.0' # 1.05
+    alpha = '1.05' # 1.05
     width_k = '7' # 7
-    width_min = '0.04' # 0.0015
-    width_max = '0.04' # 0.015
+    width_min = '0.06' # 0.0015
+    width_max = '0.06' # 0.015
 
 pcd_filename_list = os.listdir(folder_path)
 pcd_filename_list.sort()
