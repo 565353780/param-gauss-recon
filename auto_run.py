@@ -2,7 +2,7 @@ import os
 from shutil import copyfile
 
 folder_path = "/home/chli/chLi/Dataset/SampledPcd/ShapeNet/03001627/"
-sample = '2048'
+sample = '4000'
 alpha = '1.08'
 width_k = '7'
 
@@ -10,7 +10,7 @@ pcd_filename_list = os.listdir(folder_path)
 pcd_filename_list.sort()
 
 result_folder_path = './output/recon/sample_' + sample + '_k_' + width_k + '_min_0.0015_max_0.015_alpha_' + alpha + '_depth_min_1_depth_max_1/'
-save_folder_path = '/home/chli/chLi/Dataset/PGR_Recon_2048/ShapeNet/03001627/'
+save_folder_path = '/home/chli/chLi/Dataset/PGR_Recon_' + sample + '/ShapeNet/03001627/'
 os.makedirs(save_folder_path, exist_ok=True)
 
 solved_shape_names = os.listdir(save_folder_path)

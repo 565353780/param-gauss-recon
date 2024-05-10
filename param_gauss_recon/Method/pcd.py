@@ -16,6 +16,10 @@ def downSample(pcd, sample_point_num):
         print("\t sample_point_num:", sample_point_num)
         return None
 
+    if False:
+        down_sample_pcd = pcd.voxel_down_sample(0.015)
+        return down_sample_pcd
+
     try:
         down_sample_pcd = pcd.farthest_point_down_sample(sample_point_num)
     except:
