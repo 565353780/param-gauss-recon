@@ -18,6 +18,8 @@ def downSample(pcd, sample_point_num):
 
     if False:
         down_sample_pcd = pcd.voxel_down_sample(0.015)
+        #o3d.visualization.draw_geometries([down_sample_pcd])
+        #exit()
         return down_sample_pcd
 
     try:
