@@ -1,46 +1,80 @@
 import os
+from tqdm import tqdm
 from time import sleep
 from shutil import copyfile
 
 def demo():
     print('start convert new data...')
 
+    dataset_folder_path = '/home/chli/chLi/Dataset/SampledPcd_Manifold/ShapeNet/'
+    check_folder_path = '/home/chli/chLi/Dataset/MashV4/ShapeNet/'
     sample = '4000'
-    alpha = '1.2'
-    width_k = '1'
+    save_folder_path = '/home/chli/chLi/Dataset/PGR_Manifold_Recon_' + sample + '/ShapeNet/'
 
-    first_solve_list = ['03001627', '02691156']
-    first_solve_list = ['03001627']
-    for category_id in first_solve_list:
-        compare_folder_path = '../ma-sh/output/metric_manifold_result_selected/ShapeNet/' + category_id + '/'
+    alpha = '1.05'
+    width_k = '7'
+    width_min = '0.0015' # 0.0015
+    width_max = '0.015' # 0.015
 
-        first_solve_shape_ids = None
-        if os.path.exists(compare_folder_path):
-            first_solve_shape_ids = os.listdir(compare_folder_path)
-        first_solve_shape_ids = None
+    result_folder_path = './output/recon/sample_' + sample + '_k_' + width_k + '_min_' + width_min + '_max_' + width_max + '_alpha_' + alpha + '_depth_min_1_depth_max_1/'
 
-        dataset_folder_path = '/home/chli/chLi/Dataset/SampledPcd_Manifold/ShapeNet/' + category_id + '/'
-        result_folder_path = './output/recon/sample_' + sample + '_k_' + width_k + '_min_0.0015_max_0.015_alpha_' + alpha + '_depth_min_1_depth_max_1/'
-        save_folder_path = '/home/chli/chLi/Dataset/PGR_Manifold_Recon_' + sample + '/ShapeNet/' + category_id + '/'
-        os.makedirs(save_folder_path, exist_ok=True)
+    classname_list = os.listdir(dataset_folder_path)
+    classname_list.sort()
 
-        solved_shape_names = os.listdir(save_folder_path)
+    model_filename_list_dict = {}
+    check_model_filename_list_dict = {}
+    solved_model_filename_list_dict = {}
+    max_shape_num = 0
 
-        pcd_filename_list = os.listdir(dataset_folder_path)
-        pcd_filename_list.sort()
+    for classname in tqdm(classname_list):
+        class_folder_path = dataset_folder_path + classname + '/'
 
-        for i, pcd_filename in enumerate(pcd_filename_list):
-            if pcd_filename[-4:] != '.npy':
+        model_filename_list = os.listdir(class_folder_path)
+        model_filename_list.sort()
+
+        max_shape_num = max(max_shape_num, len(model_filename_list))
+        model_filename_list_dict[classname] = model_filename_list
+
+        check_model_filename_list_dict[classname] = []
+
+        class_check_folder_path = check_folder_path + classname + '/'
+        if not os.path.exists(class_check_folder_path):
+            continue
+
+        check_model_filename_list = os.listdir(class_check_folder_path)
+        check_model_filename_list.sort()
+        check_model_filename_list_dict[classname] = check_model_filename_list
+
+        solved_model_filename_list_dict[classname] = []
+        class_save_folder_path = save_folder_path + classname + "/"
+        os.makedirs(class_save_folder_path, exist_ok=True)
+        solved_model_filename_list = os.listdir(class_save_folder_path)
+        solved_model_filename_list.sort()
+        solved_model_filename_list_dict[classname] = solved_model_filename_list
+
+    solved_shape_num = 0
+    for i in range(max_shape_num):
+        for classname, model_filename_list in model_filename_list_dict.items():
+            if len(model_filename_list) <= i:
                 continue
 
-            if first_solve_shape_ids is not None:
-                if pcd_filename.split('.npy')[0] not in first_solve_shape_ids:
-                    continue
+            model_filename = model_filename_list[i]
 
-            if pcd_filename.replace('.npy', '.ply') in solved_shape_names:
+            if model_filename[-4:] != '.npy':
                 continue
 
-            pcd_file_path = dataset_folder_path + pcd_filename
+            check_model_filename_list = check_model_filename_list_dict[classname]
+            if model_filename not in check_model_filename_list:
+                continue
+
+            solved_model_filename_list = solved_model_filename_list_dict[classname]
+            if model_filename.replace('.npy', '.ply') in solved_model_filename_list:
+                continue
+
+            class_folder_path = dataset_folder_path + classname + '/'
+            class_save_folder_path = save_folder_path + classname + "/"
+
+            pcd_file_path = class_folder_path + model_filename
 
             cmd = (
                 "python run_pgr.py "
@@ -48,20 +82,24 @@ def demo():
                 + " --sample " + sample
                 + " --alpha " + alpha
                 + " --width_k " + width_k
+                + " --width_min " + width_min
+                + " --width_max " + width_max
             )
 
-            print("start run shape[" + str(i) + "]:")
+            print("start run shape[" + str(solved_shape_num) + "]:")
             print(cmd)
 
             os.system(cmd)
 
-            recon_mesh_file_path = result_folder_path + pcd_filename.split('.npy')[0] + '_sample-' + sample + '_recon_pgr.ply'
+            recon_mesh_file_path = result_folder_path + model_filename.split('.npy')[0] + '_sample-' + sample + '_recon_pgr.ply'
             if os.path.exists(recon_mesh_file_path):
-                save_mesh_file_path = save_folder_path + pcd_filename.replace('.npy', '.ply')
+                save_mesh_file_path = class_save_folder_path + model_filename.replace('.npy', '.ply')
 
                 copyfile(recon_mesh_file_path, save_mesh_file_path)
 
-            print('category:', category_id, 'solved shape num:', i + 1)
+                solved_shape_num += 1
+
+            print('category:', classname, 'solved shape num:', solved_shape_num)
 
     print('convert new data finished!')
     return True
