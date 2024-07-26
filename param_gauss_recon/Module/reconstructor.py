@@ -19,21 +19,7 @@ class Reconstructor(object):
         self.PARAM_MIDFIX = None
         return
 
-    def reconstructSurface(
-        self,
-        input: str,
-        sample_point_num: Union[int, None] = None,
-        width_k: int = 7,
-        width_max: float = 0.015,
-        width_min: float = 0.0015,
-        alpha: float = 1.05,
-        max_iters: Union[int, None] = None,
-        max_depth: int = 10,
-        min_depth: int = 1,
-        cpu: bool = False,
-        save_r: Union[str, None] = None,
-        recon_mesh: bool = True,
-    ) -> bool:
+    def toSampledPcdFile(self, input: str, sample_point_num: int) -> str:
         if sample_point_num is not None:
             if sample_point_num > 0:
                 pcd_file_name = input.split("/")[-1]
@@ -69,6 +55,24 @@ class Reconstructor(object):
                 createFileFolder(save_pcd_file_path)
 
                 o3d.io.write_point_cloud(save_pcd_file_path, pcd, write_ascii=True)
+        return save_pcd_file_path
+
+    def reconstructSurface(
+        self,
+        input: str,
+        sample_point_num: Union[int, None] = None,
+        width_k: int = 7,
+        width_max: float = 0.015,
+        width_min: float = 0.0015,
+        alpha: float = 1.05,
+        max_iters: Union[int, None] = None,
+        max_depth: int = 10,
+        min_depth: int = 1,
+        cpu: bool = False,
+        save_r: Union[str, None] = None,
+        recon_mesh: bool = True,
+    ) -> bool:
+        save_pcd_file_path = self.toSampledPcdFile(input, sample_point_num)
 
         PARAM_MIDFIX = f"_k_{width_k}_min_{width_min}_max_{width_max}_alpha_{alpha}_depth_min_{min_depth}_depth_max_{min_depth}_"
         if sample_point_num is not None:
@@ -88,7 +92,6 @@ class Reconstructor(object):
             + f"alpha:       {alpha}\n"
             + "---------Settings---------"
         )
-
         print(setup_str)
 
         in_filename = save_pcd_file_path
@@ -102,9 +105,6 @@ class Reconstructor(object):
         sample_file_prefix = sample_file_folder + data_index
         solve_file_prefix = solve_file_folder + data_index
         recon_file_prefix = recon_file_folder + data_index
-
-        solve_base_file_prefix = sample_file_prefix
-        solve_sample_file_prefix = sample_file_prefix
 
         if not os.path.exists(sample_file_folder):
             os.makedirs(f"{sample_file_folder}")
@@ -129,8 +129,7 @@ class Reconstructor(object):
         print("[INFO][Reconstructor::reconstructSurface]")
         print("\t start solve equation...")
         self.solver.solve(
-            solve_base_file_prefix + "_normalized.npy",
-            solve_sample_file_prefix + "_normalized.npy",
+            sample_file_prefix + "_normalized.npy",
             sample_file_prefix + "_for_query.npy",
             solve_file_prefix + PARAM_MIDFIX,
             width_k,

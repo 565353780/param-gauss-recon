@@ -1,3 +1,4 @@
+import torch
 import numpy as np
 from time import time
 from typing import Union
@@ -23,7 +24,6 @@ class Solver(object):
     def solve(
         self,
         base: str,
-        sample: str,
         query: str,
         output: str,
         width_k: int,
@@ -35,39 +35,24 @@ class Solver(object):
         save_r: Union[str, None] = None,
         recon_mesh: bool=True,
     ) -> bool:
-        if cpu:
-            cp = None
-        else:
-            import cupy as cp
-
         out_prefix = output
 
-        y_base_np = load_sample_from_npy(
-            base, return_cupy=False, dtype=FLT_TYPE
-        )  # [N_x, 3]
-        if sample == base:
-            x_sample_np = y_base_np
-        else:
-            x_sample_np = load_sample_from_npy(
-                sample, return_cupy=False, dtype=FLT_TYPE
-            )  # [N_y, 3]
+        y_base_np = np.load(base).astype(FLT_TYPE) # [N_x, 3]
+
+        y_base = torch.from_numpy(y_base_np)
+        x_sample = y_base.clone()
 
         if width_min > width_max:
-            x_width_np = np.ones(x_sample_np.shape[0], dtype=FLT_TYPE) * width_min
-            TIME_START_X_WIDTH = 0
-            TIME_END_X_WIDTH = 0
+            x_width = torch.ones(x_sample.shape[0], dtype=x_sample.dtype) * width_min
         else:
-            TIME_START_X_WIDTH = time()
-            x_width_np, base_kdtree = get_width(
-                x_sample_np,
+            x_width, base_kdtree = get_width(
+                x_sample,
                 k=width_k,
-                dtype=FLT_TYPE,
                 width_min=width_min,
                 width_max=width_max,
-                base_set=y_base_np,
+                base_set=y_base,
                 return_kdtree=True,
             )
-            TIME_END_X_WIDTH = time()
 
         x_sample = x_sample_np if cpu else cp.array(x_sample_np)
         x_width = x_width_np if cpu else cp.array(x_width_np)
@@ -75,11 +60,6 @@ class Solver(object):
 
         print(
             f"[In apps.PGRSolve] x_width range: [{x_width.min().item():.4f}, {x_width.max().item():.4f}], mean: {x_width.mean().item():.4f}"
-        )
-        print(
-            "\033[94m"
-            + f"[Timer] x_width computed in {TIME_END_X_WIDTH-TIME_START_X_WIDTH}"
-            + "\033[0m"
         )
 
         print("[In apps.PGRSolve] Starting to solve the system...")

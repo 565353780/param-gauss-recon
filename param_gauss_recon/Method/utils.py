@@ -1,4 +1,5 @@
 import math
+import torch
 import numpy as np
 from tqdm import tqdm
 from scipy.spatial import KDTree
@@ -251,14 +252,13 @@ def get_query_vals(queries, q_width, y_base, lse, chunk_size):
 
 
 def get_width(
-    query_set,
-    k,
-    dtype,
-    width_min,
-    width_max,
-    base_set=None,
-    base_kdtree=None,
-    return_kdtree=False,
+    query_set: torch.Tensor,
+    k: int,
+    width_min: float,
+    width_max: float,
+    base_set: Union[torch.Tensor, None] = None,
+    base_kdtree: Union[KDTree, None] = None,
+    return_kdtree: bool=False,
 ):
     """
     query_set: [Nx, 3], Nx points of which the widths are needed
@@ -284,12 +284,11 @@ def get_width(
         (query_widths: [Nx], kdtree_base_set)
     """
 
-    assert not (base_set is None and base_kdtree is None)
-
     if base_kdtree is None:
+        assert base_set is not None
         base_kdtree = KDTree(base_set)
 
-    x_knn_dist, x_knn_idx = base_kdtree.query(query_set, k=k + 1)  # [N, k],
+    x_knn_dist, x_knn_idx = base_kdtree.query(query_set, k=k + 2)  # [N, k],
     x_knn_dist = x_knn_dist.astype(dtype)
 
     x_width = np.sqrt(np.einsum("nk,nk->n", x_knn_dist[:, 1:], x_knn_dist[:, 1:]) / k)
