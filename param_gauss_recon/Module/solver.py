@@ -37,9 +37,9 @@ class Solver(object):
     ) -> bool:
         out_prefix = output
 
-        y_base_np = np.load(base).astype(FLT_TYPE) # [N_x, 3]
+        y_base_np = np.load(base) # [N_x, 3]
 
-        y_base = torch.from_numpy(y_base_np)
+        y_base = torch.from_numpy(y_base_np).type(FLT_TYPE)
         x_sample = y_base.clone()
 
         if width_min > width_max:
@@ -53,10 +53,6 @@ class Solver(object):
                 base_set=y_base,
                 return_kdtree=True,
             )
-
-        x_sample = x_sample_np if cpu else cp.array(x_sample_np)
-        x_width = x_width_np if cpu else cp.array(x_width_np)
-        y_base = y_base_np if cpu else cp.array(y_base_np)
 
         print(
             f"[In apps.PGRSolve] x_width range: [{x_width.min().item():.4f}, {x_width.max().item():.4f}], mean: {x_width.mean().item():.4f}"

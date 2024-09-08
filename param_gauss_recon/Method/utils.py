@@ -1,9 +1,10 @@
 import math
 import torch
 import numpy as np
-from tqdm import tqdm
-from scipy.spatial import KDTree
 from time import time
+from tqdm import tqdm
+from typing import Union
+from scipy.spatial import KDTree
 
 from param_gauss_recon.Config.constant import EPSILON
 
@@ -289,9 +290,9 @@ def get_width(
         base_kdtree = KDTree(base_set)
 
     x_knn_dist, x_knn_idx = base_kdtree.query(query_set, k=k + 2)  # [N, k],
-    x_knn_dist = x_knn_dist.astype(dtype)
+    x_knn_dist = torch.from_numpy(x_knn_dist).type(query_set.dtype)
 
-    x_width = np.sqrt(np.einsum("nk,nk->n", x_knn_dist[:, 1:], x_knn_dist[:, 1:]) / k)
+    x_width = torch.sqrt(torch.einsum("nk,nk->n", x_knn_dist[:, 1:], x_knn_dist[:, 1:]) / k)
     x_width[x_width > width_max] = width_max
     x_width[x_width < width_min] = width_min
 
