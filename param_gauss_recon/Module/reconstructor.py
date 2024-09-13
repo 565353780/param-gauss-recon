@@ -5,6 +5,7 @@ from typing import Union
 from os.path import join, basename
 
 from param_gauss_recon.Config.path import EXPORT_QUERY_EXE, LOAD_QUERY_EXE
+from param_gauss_recon.Data.pgr_params import PGRParams
 from param_gauss_recon.Method.path import createFileFolder
 from param_gauss_recon.Module.pcd_sampler import PcdSampler
 from param_gauss_recon.Module.solver import Solver
@@ -14,8 +15,6 @@ class Reconstructor(object):
     def __init__(self) -> None:
         self.pcd_sampler = PcdSampler()
         self.solver = Solver()
-
-        self.PARAM_MIDFIX = None
         return
 
     def toSampledPcdFile(self, input: str, sample_point_num: Union[int, None]) -> str:
@@ -29,12 +28,12 @@ class Reconstructor(object):
                     pcd_file_type, "_sample-" + str(sample_point_num) + ".xyz"
                 )
 
-                print("[INFO][Reconstructor::reconstructSurface]")
+                print("[INFO][Reconstructor::toSampledPcdFile]")
                 print("\t start toFPSPcdFile...")
                 if not self.pcd_sampler.toFPSPcdFile(
                     input, sample_point_num, save_pcd_file_path
                 ):
-                    print("[WARN][Reconstructor::reconstructSurface]")
+                    print("[WARN][Reconstructor::toSampledPcdFile]")
                     print("\t toFPSPcdFile failed!")
                     print("\t try to start reconstruct with the input point cloud...")
                     save_pcd_file_path = input
@@ -64,39 +63,13 @@ class Reconstructor(object):
     def reconstructSurface(
         self,
         input: str,
-        sample_point_num: Union[int, None] = None,
-        width_k: int = 7,
-        width_max: float = 0.015,
-        width_min: float = 0.0015,
-        alpha: float = 1.05,
-        max_iters: Union[int, None] = None,
-        max_depth: int = 10,
-        min_depth: int = 1,
-        cpu: bool = False,
-        save_r: Union[str, None] = None,
-        recon_mesh: bool = True,
+        pgr_params: PGRParams,
     ) -> bool:
-        save_pcd_file_path = self.toSampledPcdFile(input, sample_point_num)
+        save_pcd_file_path = self.toSampledPcdFile(input, pgr_params.sample_point_num)
 
-        PARAM_MIDFIX = f"_k_{width_k}_min_{width_min}_max_{width_max}_alpha_{alpha}_depth_min_{min_depth}_depth_max_{min_depth}_"
-        if sample_point_num is not None:
-            PARAM_MIDFIX = f"_sample_{sample_point_num}" + PARAM_MIDFIX
+        self.param_midfix = pgr_params.toLogStr()
 
-        # self.PARAM_MIDFIX is only used for outer call recon results path
-        self.param_midfix = PARAM_MIDFIX
-
-        setup_str = (
-            "---------Settings---------\n"
-            + f"min depth:   {min_depth}\n"
-            + f"max depth:   {max_depth}\n"
-            + f"max iters:   {max_iters}\n"
-            + f"width_k:     {width_k}\n"
-            + f"width_min:   {width_min}\n"
-            + f"width_max:   {width_max}\n"
-            + f"alpha:       {alpha}\n"
-            + "---------Settings---------"
-        )
-        print(setup_str)
+        pgr_params.outputInfo()
 
         in_filename = save_pcd_file_path
         data_index = in_filename.split("/")[-1][:-4]
@@ -122,7 +95,7 @@ class Reconstructor(object):
             os.makedirs(f"{recon_file_folder}")
 
         # build octree
-        build_octree_cmd = f"{EXPORT_QUERY_EXE} -i {save_pcd_file_path} -o {sample_file_prefix} -d {max_depth} -m {min_depth} "
+        build_octree_cmd = f"{EXPORT_QUERY_EXE} -i {save_pcd_file_path} -o {sample_file_prefix} -d {pgr_params.max_depth} -m {pgr_params.min_depth} "
         print(f"\n[EXECUTING] {build_octree_cmd}\n")
         os.system(build_octree_cmd)
 
@@ -132,31 +105,24 @@ class Reconstructor(object):
         self.solver.solve(
             sample_file_prefix + "_normalized.npy",
             sample_file_prefix + "_for_query.npy",
-            solve_file_prefix + PARAM_MIDFIX,
-            width_k,
-            width_min,
-            width_max,
-            alpha,
-            max_iters,
-            cpu,
-            save_r,
-            recon_mesh,
+            solve_file_prefix + self.param_midfix,
+            pgr_params
         )
 
-        if not recon_mesh:
+        if not pgr_params.recon_mesh:
             return True
 
         # reconstruction
-        with open(f"{solve_file_prefix}{PARAM_MIDFIX}isoval.txt", "r") as isoval_file:
+        with open(f"{solve_file_prefix}{self.param_midfix}_isoval.txt", "r") as isoval_file:
             isoval = isoval_file.read()
             isoval = eval(isoval)
 
         recon_cmd = (
-            f"{LOAD_QUERY_EXE} -i {in_filename} -d {max_depth} -m {min_depth} "
-            + f"--grid_val {solve_file_prefix}{PARAM_MIDFIX}eval_grid.npy "
-            + f"--grid_width {solve_file_prefix}{PARAM_MIDFIX}grid_width.npy "
+            f"{LOAD_QUERY_EXE} -i {in_filename} -d {pgr_params.max_depth} -m {pgr_params.min_depth} "
+            + f"--grid_val {solve_file_prefix}{self.param_midfix}_eval_grid.npy "
+            + f"--grid_width {solve_file_prefix}{self.param_midfix}_grid_width.npy "
             + f"--isov {isoval} "
-            + f"-o {recon_file_prefix}{PARAM_MIDFIX}recon.ply"
+            + f"-o {recon_file_prefix}{self.param_midfix}_recon.ply"
         )
         print(f"\n[EXECUTING] {recon_cmd}\n")
         os.system(recon_cmd)
@@ -164,10 +130,10 @@ class Reconstructor(object):
         # copy recon results to output folder for faster visualization
         if True:
             recon_file_basename = recon_file_prefix.split('/')[-1]
-            save_recon_folder_path = './output/recon/' + PARAM_MIDFIX[1:-1] + '/'
+            save_recon_folder_path = './output/recon/' + self.param_midfix[1:] + '/'
 
             os.makedirs(save_recon_folder_path, exist_ok=True)
 
-            shutil.copyfile("./" + recon_file_prefix + PARAM_MIDFIX + "recon.ply", save_recon_folder_path + recon_file_basename + "_recon_pgr.ply")
+            shutil.copyfile("./" + recon_file_prefix + self.param_midfix + "_recon.ply", save_recon_folder_path + recon_file_basename + "_recon_pgr.ply")
 
         return True

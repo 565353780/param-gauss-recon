@@ -1,5 +1,6 @@
 import argparse
 
+from param_gauss_recon.Data.pgr_params import PGRParams
 from param_gauss_recon.Module.reconstructor import Reconstructor
 
 parser = argparse.ArgumentParser()
@@ -35,18 +36,17 @@ parser.add_argument("--cpu", action="store_true", help="run with cpu")
 parser.add_argument("--save_r", action="store_true", help="save the residual list")
 args = parser.parse_args()
 
+pgr_params = PGRParams()
+pgr_params.sample_point_num = args.sample
+pgr_params.width_k = args.width_k
+pgr_params.width_min = args.width_min
+pgr_params.width_max = args.width_max
+pgr_params.alpha = args.alpha
+pgr_params.max_iters = args.max_iters
+pgr_params.min_depth = args.min_depth
+pgr_params.max_depth = args.max_depth
+pgr_params.cpu = args.cpu
+pgr_params.save_r = args.save_r
 
 reconstructor = Reconstructor()
-reconstructor.reconstructSurface(
-    args.input,
-    args.sample,
-    args.width_k,
-    args.width_max,
-    args.width_min,
-    args.alpha,
-    args.max_iters,
-    args.max_depth,
-    args.min_depth,
-    args.cpu,
-    args.save_r,
-)
+reconstructor.reconstructSurface(args.input, pgr_params)
