@@ -95,7 +95,7 @@ class Reconstructor(object):
             os.makedirs(f"{recon_file_folder}")
 
         # build octree
-        build_octree_cmd = f"{EXPORT_QUERY_EXE} -i {save_pcd_file_path} -o {sample_file_prefix} -d {pgr_params.max_depth} -m {pgr_params.min_depth} "
+        build_octree_cmd = f"{EXPORT_QUERY_EXE} -i {save_pcd_file_path} -o {sample_file_prefix}" + pgr_params.toCMDStr()
         print(f"\n[EXECUTING] {build_octree_cmd}\n")
         os.system(build_octree_cmd)
 
@@ -118,11 +118,11 @@ class Reconstructor(object):
             isoval = eval(isoval)
 
         recon_cmd = (
-            f"{LOAD_QUERY_EXE} -i {in_filename} -d {pgr_params.max_depth} -m {pgr_params.min_depth} "
-            + f"--grid_val {solve_file_prefix}{self.param_midfix}_eval_grid.npy "
-            + f"--grid_width {solve_file_prefix}{self.param_midfix}_grid_width.npy "
-            + f"--isov {isoval} "
-            + f"-o {recon_file_prefix}{self.param_midfix}_recon.ply"
+            f"{LOAD_QUERY_EXE} -i {in_filename}" + pgr_params.toCMDStr()
+            + f" --grid_val {solve_file_prefix}{self.param_midfix}_eval_grid.npy"
+            + f" --grid_width {solve_file_prefix}{self.param_midfix}_grid_width.npy"
+            + f" --isov {isoval}"
+            + f" -o {recon_file_prefix}{self.param_midfix}_recon.ply"
         )
         print(f"\n[EXECUTING] {recon_cmd}\n")
         os.system(recon_cmd)

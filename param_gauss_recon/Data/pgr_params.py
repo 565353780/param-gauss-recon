@@ -19,7 +19,7 @@ class PGRParams(object):
         cmd_str += " -d " + str(self.max_depth)
         cmd_str += " -m " + str(self.min_depth)
 
-        return True
+        return cmd_str
 
     def toLogStr(self) -> str:
         log_str = ""
