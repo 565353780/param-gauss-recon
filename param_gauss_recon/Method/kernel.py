@@ -9,7 +9,7 @@ def mul_A_T(x: torch.Tensor, y: torch.Tensor, xi: torch.Tensor,
     N_sample = y.shape[0]
     n_y_chunks = N_sample // chunk_size + 1
 
-    lse = torch.zeros((3, N_sample), dtype=x.dtype)
+    lse = torch.zeros((3, N_sample), dtype=x.dtype, device=x.device)
     for i in range(n_y_chunks):
         y_chunk = y[i * chunk_size : (i + 1) * chunk_size]
         A_chunk = get_A(x, y_chunk, x_width)
@@ -62,7 +62,7 @@ def get_B(x: torch.Tensor, y: torch.Tensor,
     """
     N_query = x.shape[0]
 
-    B = torch.zeros([N_query, N_query], dtype=x.dtype)
+    B = torch.zeros([N_query, N_query], dtype=x.dtype, device=x.device)
 
     n_row_chunks = N_query // chunk_size + 1
     n_col_chunks = n_row_chunks
@@ -105,7 +105,7 @@ def get_B(x: torch.Tensor, y: torch.Tensor,
                 ].shape[0]
                 if block_size <= 0:
                     continue
-                diag_mask = torch.eye(block_size, dtype=torch.bool)
+                diag_mask = torch.eye(block_size, dtype=torch.bool, device=x.device)
                 # diag_sqr = (B[i*chunk_size:(i+1)*chunk_size, j*chunk_size:(j+1)*chunk_size][diag_mask])
                 B[
                     i * chunk_size : (i + 1) * chunk_size,

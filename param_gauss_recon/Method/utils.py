@@ -31,8 +31,8 @@ def solve(
     print('\t start pre-computing B...')
     B = get_B(x, y, chunk_size, x_width, pgr_params.alpha)
 
-    xi = torch.zeros(N_query, dtype=x.dtype)
-    r = torch.ones(N_query, dtype=x.dtype) * iso_value
+    xi = torch.zeros(N_query, dtype=x.dtype, device=x.device)
+    r = torch.ones(N_query, dtype=x.dtype, device=x.device) * iso_value
     p = r.clone()
 
     if pgr_params.save_r:
@@ -69,7 +69,7 @@ def solve(
     return lse
 
 def get_query_vals(queries: torch.Tensor, q_width: torch.Tensor,
-                   y_base: torch.Tensor, lse: torch.Tensor, chunk_size: int):
+                   y_base: torch.Tensor, lse: torch.Tensor, chunk_size: int) -> torch.Tensor:
     ### getting values
     split_length = queries.shape[0] // chunk_size + 1
     split_num = queries.shape[0] // split_length
@@ -85,7 +85,7 @@ def get_query_vals(queries: torch.Tensor, q_width: torch.Tensor,
         A_show = get_A(chunk, y_base, cut_chunk)
         query_vals.append(torch.matmul(A_show, lse))
 
-    query_vals = np.concatenate(query_vals, axis=0)
+    query_vals = torch.cat(query_vals, dim=0)
     return query_vals
 
 
@@ -94,7 +94,6 @@ def get_width(
     pgr_params: PGRParams,
     base_set: Union[torch.Tensor, None] = None,
     base_kdtree: Union[KDTree, None] = None,
-    return_kdtree: bool=False,
 ):
     """
     query_set: [Nx, 3], Nx points of which the widths are needed
@@ -105,8 +104,6 @@ def get_width(
 
     base_kdtree: this function will build a kdtree for `base_set`.
         However, if you have built one before this call, just pass it here.
-
-    return_kdtree: whether to return the built kdtree for future use.
 
     ---------------
     Note: one of `base_set` and `base_kdtree` must be given
@@ -120,18 +117,19 @@ def get_width(
         (query_widths: [Nx], kdtree_base_set)
     """
 
+    if pgr_params.width_min > pgr_params.width_max:
+        x_width = torch.ones(query_set.shape[0], dtype=query_set.dtype) * pgr_params.width_min
+
+        return x_width, None
+
     if base_kdtree is None:
         assert base_set is not None
-        base_kdtree = KDTree(base_set)
+        base_kdtree = KDTree(base_set.cpu())
 
-    x_knn_dist, _ = base_kdtree.query(query_set, k=pgr_params.width_k + 2)  # [N, k],
-    x_knn_dist = torch.from_numpy(x_knn_dist).type(query_set.dtype)
+    x_knn_dist, _ = base_kdtree.query(query_set.cpu(), k=pgr_params.width_k + 2)  # [N, k],
+    x_knn_dist = torch.from_numpy(x_knn_dist).type(query_set.dtype).to(query_set.device)
 
     x_width = torch.sqrt(torch.einsum("nk,nk->n", x_knn_dist[:, 1:], x_knn_dist[:, 1:]) / pgr_params.width_k)
     torch.clip(x_width, pgr_params.width_min, pgr_params.width_max)
 
-    if return_kdtree:
-        return x_width, base_kdtree
-    else:
-        del base_kdtree
-        return x_width
+    return x_width, base_kdtree

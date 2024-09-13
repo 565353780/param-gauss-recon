@@ -1,3 +1,6 @@
+import torch
+
+
 class PGRParams(object):
     def __init__(self) -> None:
         self.sample_point_num = 2000
@@ -8,9 +11,15 @@ class PGRParams(object):
         self.max_iters = None # int
         self.min_depth = 1
         self.max_depth = 10
-        self.cpu = False
+        self.dtype = torch.float32
+        self.device = 'cuda'
         self.save_r = None # str
         self.recon_mesh = True
+
+        if not torch.cuda.is_available():
+            print('[WARN][PGRParams::__init__]')
+            print('\t torch cuda is not available! will use cpu!')
+            self.device = 'cpu'
         return
 
     def toCMDStr(self) -> str:

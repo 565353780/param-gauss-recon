@@ -1,7 +1,7 @@
 import os
-import shutil
 import open3d as o3d
 from typing import Union
+from shutil import copyfile
 from os.path import join, basename
 
 from param_gauss_recon.Config.path import EXPORT_QUERY_EXE, LOAD_QUERY_EXE
@@ -85,14 +85,11 @@ class Reconstructor(object):
 
         if not os.path.exists(sample_file_folder):
             os.makedirs(f"{sample_file_folder}")
-            shutil.copyfile(
+            copyfile(
                 in_filename, join(sample_file_folder, basename(in_filename))
             )
-            # os.system(f'cp {in_filename} {sample_file_folder}')
-        if not os.path.exists(solve_file_folder):
-            os.makedirs(f"{solve_file_folder}")
-        if not os.path.exists(recon_file_folder):
-            os.makedirs(f"{recon_file_folder}")
+        os.makedirs(solve_file_folder, exist_ok=True)
+        os.makedirs(recon_file_folder, exist_ok=True)
 
         # build octree
         build_octree_cmd = f"{EXPORT_QUERY_EXE} -i {save_pcd_file_path} -o {sample_file_prefix}" + pgr_params.toCMDStr()
@@ -134,6 +131,6 @@ class Reconstructor(object):
 
             os.makedirs(save_recon_folder_path, exist_ok=True)
 
-            shutil.copyfile("./" + recon_file_prefix + self.param_midfix + "_recon.ply", save_recon_folder_path + recon_file_basename + "_recon_pgr.ply")
+            copyfile("./" + recon_file_prefix + self.param_midfix + "_recon.ply", save_recon_folder_path + recon_file_basename + "_recon_pgr.ply")
 
         return True
