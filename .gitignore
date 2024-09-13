@@ -131,6 +131,7 @@ dmypy.json
 # compiled
 apps
 .DS_Store
+bin
 
 # output
 output

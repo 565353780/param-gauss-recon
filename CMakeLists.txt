@@ -1,33 +1,63 @@
+cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set(CMAKE_CXX_FLAGS "-std=c++17 -O0")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    set(CMAKE_CXX_FLAGS "/std:c++17 /O0")
+endif()
+
 project("ParametricGaussRecon")
-cmake_minimum_required(VERSION 3.0)
+
+set(ROOT_FOLDER ../param-gauss-recon)
 
 find_package(ZLIB REQUIRED)
 
-set(CPP_FOLDER ../param-gauss-recon/param_gauss_recon/Cpp)
-set(LIB_FOLDER ../param-gauss-recon/param_gauss_recon/Lib)
-set(SRC_FOLDER ${CPP_FOLDER}/src)
+file(GLOB_RECURSE SRC ${ROOT_FOLDER}/src/*.cpp)
+list(FILTER SRC EXCLUDE REGEX "main.cpp")
 
-set(SOURCES
-  ${SRC_FOLDER}/Cube.cpp
-  ${SRC_FOLDER}/Geometry.cpp
-  ${SRC_FOLDER}/MarchingCubes.cpp
-  ${SRC_FOLDER}/Mesh.cpp
-  ${SRC_FOLDER}/Octnode.cpp
-  ${SRC_FOLDER}/Octree.cpp
-  ${SRC_FOLDER}/ply.cpp
-  ${SRC_FOLDER}/plyfile.cpp
-  ${LIB_FOLDER}/cnpy/cnpy.cpp)
+set(PGR_FOLDER ${ROOT_FOLDER}/3rd/PGR)
+file(GLOB_RECURSE PGR_SRC ${PGR_FOLDER}/src/*.cpp)
 
-include_directories(${CPP_FOLDER}/include)
+set(CNPY_SRC ${ROOT_FOLDER}/3rd/cnpy/cnpy.cpp)
 
-add_executable(PGRExportQuery ${CPP_FOLDER}/PGRExportQuery.cpp ${SOURCES})
+include_directories(${ROOT_FOLDER}/include)
+include_directories(${PGR_FOLDER}/include)
+
+add_executable(PGRExportQuery ${PGR_FOLDER}/PGRExportQuery.cpp ${PGR_SRC} ${CNPY_SRC})
 target_compile_features(PGRExportQuery PRIVATE cxx_std_17)
-target_include_directories(PGRExportQuery PRIVATE "${PROJECT_SOURCE_DIR}/${LIB_FOLDER}/cnpy/" "${PROJECT_SOURCE_DIR}/${LIB_FOLDER}/CLI11/")
+target_include_directories(PGRExportQuery PRIVATE "${ROOT_FOLDER}/3rd/cnpy/" "${ROOT_FOLDER}/3rd/CLI11/")
 target_link_libraries(PGRExportQuery PRIVATE ZLIB::ZLIB)
-set_target_properties(PGRExportQuery PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/apps/")
+set_target_properties(PGRExportQuery PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/")
 
-add_executable(PGRLoadQuery ${CPP_FOLDER}/PGRLoadQuery.cpp ${SOURCES})
+add_executable(PGRLoadQuery ${PGR_FOLDER}/PGRLoadQuery.cpp ${PGR_SRC} ${CNPY_SRC})
 target_compile_features(PGRLoadQuery PRIVATE cxx_std_17)
-target_include_directories(PGRLoadQuery PRIVATE "${PROJECT_SOURCE_DIR}/${LIB_FOLDER}/cnpy/" "${PROJECT_SOURCE_DIR}/${LIB_FOLDER}/CLI11/")
+target_include_directories(PGRLoadQuery PRIVATE "${ROOT_FOLDER}/3rd/cnpy/" "${ROOT_FOLDER}/3rd/CLI11/")
 target_link_libraries(PGRLoadQuery PRIVATE ZLIB::ZLIB)
-set_target_properties(PGRLoadQuery PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/apps/")
+set_target_properties(PGRLoadQuery PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/")
+
+set(Open3D_ROOT ../../open3d-manage/3rd/open3d-devel-linux/)
+
+set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(D_GLIBCXX_USE_CXX11_ABI 0)
+
+find_package(Open3D REQUIRED)
+if (Open3D_FOUND)
+  message(STATUS "Found Open3D ${Open3D_VERSION}")
+  link_directories(${Open3D_LIBRARY_DIRS})
+  include_directories(${Open3D_INCLUDE_DIRS})
+endif()
+
+find_package(Torch REQUIRED)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
+
+find_package(Python COMPONENTS Interpreter Development)
+find_package(pybind11 CONFIG)
+
+add_executable(${PROJECT_NAME} ./src/main.cpp ${SRC})
+
+find_library(TORCH_PYTHON_LIBRARY torch_python PATH "${TORCH_INSTALL_PREFIX}/lib")
+
+target_link_libraries(${PROJECT_NAME} PRIVATE Open3D::Open3D)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} ${TORCH_PYTHON_LIBRARY})
+target_link_libraries(${PROJECT_NAME} PRIVATE pybind11::embed)
