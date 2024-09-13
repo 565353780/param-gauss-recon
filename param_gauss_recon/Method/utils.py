@@ -2,7 +2,7 @@ import math
 import torch
 import numpy as np
 from time import time
-from tqdm import tqdm
+from tqdm import tqdm, trange
 from typing import Union
 from scipy.spatial import KDTree
 
@@ -76,7 +76,8 @@ def get_A(x, y, x_width):
     return -A
 
 
-def get_B(x, y, chunk_size, x_width, alpha):
+def get_B(x: torch.Tensor, y: torch.Tensor,
+          chunk_size: int, x_width: torch.Tensor, alpha: float):
     """
     x: numpy array of shape [N_query, 3]
     y: numpy array of shape [N_sample, 3]
@@ -84,19 +85,14 @@ def get_B(x, y, chunk_size, x_width, alpha):
     return:
     B: numpy array of shape [N_query, N_query], which is AA^T
     """
-    if isinstance(x, np.ndarray):
-        cnp = np
-    else:
-        import cupy as cnp
-
     N_query = x.shape[0]
 
-    B = cnp.zeros((N_query, N_query), dtype=x.dtype)
+    B = torch.zeros([N_query, N_query], dtype=x.dtype)
 
     n_row_chunks = N_query // chunk_size + 1
     n_col_chunks = n_row_chunks
 
-    for i in tqdm(range(n_row_chunks)):
+    for i in trange(n_row_chunks):
         x_chunk_i = x[i * chunk_size : (i + 1) * chunk_size]
 
         if x_chunk_i.shape[0] <= 0:
@@ -145,8 +141,9 @@ def get_B(x, y, chunk_size, x_width, alpha):
 
 
 def solve(
-    x, y, x_width, chunk_size, dtype, iso_value, r_sq_stop_eps, alpha, max_iters, save_r
-):
+    x: torch.Tensor, y: torch.Tensor, x_width: torch.Tensor,
+    chunk_size: int, dtype, iso_value: float, r_sq_stop_eps: float,
+    alpha: float, max_iters: int, save_r: str):
     """
     x: numpy array of shape [N_query, 3]
     y: numpy array of shape [N_sample, 3]
@@ -154,11 +151,6 @@ def solve(
     return:
     lse:
     """
-    if isinstance(x, np.ndarray):
-        cnp = np
-    else:
-        import cupy as cnp
-
     N_query = x.shape[0]
 
     if max_iters is None:
@@ -188,7 +180,7 @@ def solve(
 
     print("[In solver] Starting CG iterations...")
     TIME_START_CG = time()
-    solve_progress_bar = tqdm(range(max_iters))
+    solve_progress_bar = trange(max_iters))
     k = -1  # to prevent error message when max_iters == 0
     for k in solve_progress_bar:
         Bp = cnp.matmul(B, p)
