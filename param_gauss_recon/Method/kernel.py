@@ -2,6 +2,7 @@ import torch
 from tqdm import trange
 
 from param_gauss_recon.Config.constant import EPSILON
+from param_gauss_recon.Data.pgr_params import PGRParams
 
 
 def mul_A_T(x: torch.Tensor, y: torch.Tensor, xi: torch.Tensor,
@@ -113,3 +114,47 @@ def get_B(x: torch.Tensor, y: torch.Tensor,
                 ][diag_mask] *= alpha
 
     return B
+
+def solve(
+    x: torch.Tensor, y: torch.Tensor, x_width: torch.Tensor,
+    chunk_size: int, iso_value: float, r_sq_stop_eps: float,
+    pgr_params: PGRParams):
+    """
+    x: numpy array of shape [N_query, 3]
+    y: numpy array of shape [N_sample, 3]
+    ---
+    return:
+    lse:
+    """
+    print("[INFO][utils::solve]")
+    print('\t start pre-computing B...')
+    B = get_B(x, y, chunk_size, x_width, pgr_params.alpha)
+
+    xi = torch.zeros(x.shape[0], dtype=x.dtype, device=x.device)
+    r = torch.ones(x.shape[0], dtype=x.dtype, device=x.device) * iso_value
+    p = r.clone()
+
+    print("[INFO][utils::solve]")
+    print('\t start CG iterations...')
+    solve_progress_bar = trange(y.shape[0])
+    for _ in solve_progress_bar:
+        Bp = torch.matmul(B, p)
+        r_sq = r.dot(r)
+
+        alpha = r_sq / p.dot(Bp)
+        xi += alpha * p
+        r -= alpha * Bp
+        beta = r.dot(r) / r_sq
+        p *= beta
+        p += r
+
+        solve_progress_bar.set_description(
+            f"[In solver] {r_sq.item():.2e}/{r_sq_stop_eps:.0e}"
+        )
+
+        if r_sq < r_sq_stop_eps:
+            solve_progress_bar.close()
+            break
+    lse = mul_A_T(x, y, xi, x_width, chunk_size)
+
+    return lse

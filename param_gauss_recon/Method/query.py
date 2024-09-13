@@ -1,71 +1,11 @@
-import math
 import torch
 from typing import Union
-from tqdm import tqdm, trange
+from tqdm import tqdm
 from scipy.spatial import KDTree
 
 from param_gauss_recon.Data.pgr_params import PGRParams
-from param_gauss_recon.Method.kernel import mul_A_T, get_A, get_B
+from param_gauss_recon.Method.kernel import get_A
 
-
-def solve(
-    x: torch.Tensor, y: torch.Tensor, x_width: torch.Tensor,
-    chunk_size: int, iso_value: float, r_sq_stop_eps: float,
-    pgr_params: PGRParams):
-    """
-    x: numpy array of shape [N_query, 3]
-    y: numpy array of shape [N_sample, 3]
-    ---
-    return:
-    lse:
-    """
-    N_query = x.shape[0]
-
-    if pgr_params.max_iters is None:
-        max_iters = y.shape[0]
-    else:
-        max_iters = min(pgr_params.max_iters, y.shape[0])
-
-    print("[INFO][utils::solve]")
-    print('\t start pre-computing B...')
-    B = get_B(x, y, chunk_size, x_width, pgr_params.alpha)
-
-    xi = torch.zeros(N_query, dtype=x.dtype, device=x.device)
-    r = torch.ones(N_query, dtype=x.dtype, device=x.device) * iso_value
-    p = r.clone()
-
-    if pgr_params.save_r:
-        r_list = []
-
-    print("[INFO][utils::solve]")
-    print('\t start CG iterations...')
-    solve_progress_bar = trange(max_iters)
-    for _ in solve_progress_bar:
-        Bp = torch.matmul(B, p)
-        r_sq = r.dot(r)
-
-        alpha = r_sq / p.dot(Bp)
-        xi += alpha * p
-        r -= alpha * Bp
-        beta = r.dot(r) / r_sq
-        p *= beta
-        p += r
-
-        solve_progress_bar.set_description(
-            f"[In solver] {r_sq.item():.2e}/{r_sq_stop_eps:.0e}"
-        )
-
-        if pgr_params.save_r:
-            r_list.append(math.sqrt(r_sq.item()))
-
-        if r_sq < r_sq_stop_eps:
-            solve_progress_bar.close()
-            break
-    lse = mul_A_T(x, y, xi, x_width, chunk_size)
-
-    if pgr_params.save_r:
-        return lse, r_list
-    return lse
 
 def get_query_vals(queries: torch.Tensor, q_width: torch.Tensor,
                    y_base: torch.Tensor, lse: torch.Tensor, chunk_size: int) -> torch.Tensor:
@@ -78,9 +18,7 @@ def get_query_vals(queries: torch.Tensor, q_width: torch.Tensor,
 
     print("[INFO][utils::solve]")
     print('\t start query on the grid...')
-    tqdmbar_query = tqdm(list(zip(query_chunks, q_cut_chunks)))
-
-    for chunk, cut_chunk in tqdmbar_query:
+    for chunk, cut_chunk in tqdm(list(zip(query_chunks, q_cut_chunks))):
         A_show = get_A(chunk, y_base, cut_chunk)
         query_vals.append(torch.matmul(A_show, lse))
 

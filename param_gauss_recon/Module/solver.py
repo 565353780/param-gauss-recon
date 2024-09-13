@@ -8,11 +8,8 @@ from param_gauss_recon.Config.constant import (
 )
 from param_gauss_recon.Data.pgr_params import PGRParams
 from param_gauss_recon.Method.io import loadNpyData
-from param_gauss_recon.Method.utils import (
-    get_width,
-    solve,
-    get_query_vals,
-)
+from param_gauss_recon.Method.kernel import solve
+from param_gauss_recon.Method.query import get_width, get_query_vals
 
 
 class Solver(object):
@@ -44,7 +41,7 @@ class Solver(object):
 
         print("[INFO][Solver::solve]")
         print('\t start solve the system...')
-        solved = solve(
+        lse = solve(
             x_sample,
             y_base,
             x_width,
@@ -53,12 +50,6 @@ class Solver(object):
             R_SQ_STOP_EPS,
             pgr_params
         )
-        if pgr_params.save_r:
-            lse, r_list = solved
-            out_r_list_txt = out_prefix + "_residuals.csv"
-            np.savetxt(out_r_list_txt, r_list, fmt="%.16e", delimiter="\n")
-        else:
-            lse = solved
 
         # saving solution as npy and xyz
         out_lse = torch.cat([y_base, -lse.reshape(3, -1).permute(1, 0)], dim=1)

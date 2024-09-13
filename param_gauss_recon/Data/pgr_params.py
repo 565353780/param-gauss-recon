@@ -8,12 +8,10 @@ class PGRParams(object):
         self.width_min = 0.0015
         self.width_max = 0.015
         self.alpha = 1.05
-        self.max_iters = None # int
         self.min_depth = 1
         self.max_depth = 10
         self.dtype = torch.float32
         self.device = 'cuda'
-        self.save_r = None # str
         self.recon_mesh = True
 
         if not torch.cuda.is_available():
@@ -54,7 +52,6 @@ class PGRParams(object):
         info_str += line_start + "---------Settings---------\n"
         info_str += line_start + f"min depth:   {self.min_depth}\n"
         info_str += line_start + f"max depth:   {self.max_depth}\n"
-        info_str += line_start + f"max iters:   {self.max_iters}\n"
         info_str += line_start + f"width_k:     {self.width_k}\n"
         info_str += line_start + f"width_min:   {self.width_min}\n"
         info_str += line_start + f"width_max:   {self.width_max}\n"

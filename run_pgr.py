@@ -25,15 +25,12 @@ parser.add_argument(
 parser.add_argument(
     "-a", "--alpha", type=float, default=1.05, help="alpha for regularization"
 )
-parser.add_argument("-m", "--max_iters", type=int, help="maximum iterations for CG")
 parser.add_argument(
     "-d", "--max_depth", type=int, default=10, help="max depth of octree"
 )
 parser.add_argument(
     "-md", "--min_depth", type=int, default=1, help="min depth of octree"
 )
-parser.add_argument("--cpu", action="store_true", help="run with cpu")
-parser.add_argument("--save_r", action="store_true", help="save the residual list")
 args = parser.parse_args()
 
 pgr_params = PGRParams()
@@ -42,11 +39,8 @@ pgr_params.width_k = args.width_k
 pgr_params.width_min = args.width_min
 pgr_params.width_max = args.width_max
 pgr_params.alpha = args.alpha
-pgr_params.max_iters = args.max_iters
 pgr_params.min_depth = args.min_depth
 pgr_params.max_depth = args.max_depth
-pgr_params.cpu = args.cpu
-pgr_params.save_r = args.save_r
 
 reconstructor = Reconstructor()
 reconstructor.reconstructSurface(args.input, pgr_params)
