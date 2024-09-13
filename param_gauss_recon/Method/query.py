@@ -42,16 +42,8 @@ def get_width(
     base_kdtree: this function will build a kdtree for `base_set`.
         However, if you have built one before this call, just pass it here.
 
-    ---------------
-    Note: one of `base_set` and `base_kdtree` must be given
-    ---------------
-
     returns:
-
-    if return_kdtree == False, then returns:
-        query_widths: [Nx]
-    if return_kdtree == True, then returns a tuple:
-        (query_widths: [Nx], kdtree_base_set)
+    (query_widths: [Nx], kdtree_base_set)
     """
 
     if pgr_params.width_min > pgr_params.width_max:
@@ -61,9 +53,9 @@ def get_width(
 
     if base_kdtree is None:
         assert base_set is not None
-        base_kdtree = KDTree(base_set.cpu())
+        base_kdtree = KDTree(base_set.cpu().numpy())
 
-    x_knn_dist, _ = base_kdtree.query(query_set.cpu(), k=pgr_params.width_k + 2)  # [N, k],
+    x_knn_dist, _ = base_kdtree.query(query_set.cpu().numpy(), k=pgr_params.width_k + 2)  # [N, k],
     x_knn_dist = torch.from_numpy(x_knn_dist).type(query_set.dtype).to(query_set.device)
 
     x_width = torch.sqrt(torch.einsum("nk,nk->n", x_knn_dist[:, 1:], x_knn_dist[:, 1:]) / pgr_params.width_k)
