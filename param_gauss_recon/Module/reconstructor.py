@@ -1,7 +1,6 @@
 import os
 import shutil
 import open3d as o3d
-from time import time
 from typing import Union
 from os.path import join, basename
 
@@ -19,7 +18,7 @@ class Reconstructor(object):
         self.PARAM_MIDFIX = None
         return
 
-    def toSampledPcdFile(self, input: str, sample_point_num: int) -> str:
+    def toSampledPcdFile(self, input: str, sample_point_num: Union[int, None]) -> str:
         if sample_point_num is not None:
             if sample_point_num > 0:
                 pcd_file_name = input.split("/")[-1]
@@ -39,22 +38,27 @@ class Reconstructor(object):
                     print("\t toFPSPcdFile failed!")
                     print("\t try to start reconstruct with the input point cloud...")
                     save_pcd_file_path = input
-        else:
-            save_pcd_file_path = input
-            if '.xyz' not in input:
-                pcd_file_name = input.split("/")[-1]
 
-                pcd_file_type = '.' + pcd_file_name.split('.')[-1]
+                return save_pcd_file_path
 
-                save_pcd_file_path = "./output/sample_pcd/" + pcd_file_name.replace(
-                    pcd_file_type, ".xyz"
-                )
+        if '.xyz' in input:
+            return input
 
-                pcd = o3d.io.read_point_cloud(input)
+        save_pcd_file_path = input
+        pcd_file_name = input.split("/")[-1]
 
-                createFileFolder(save_pcd_file_path)
+        pcd_file_type = '.' + pcd_file_name.split('.')[-1]
 
-                o3d.io.write_point_cloud(save_pcd_file_path, pcd, write_ascii=True)
+        save_pcd_file_path = "./output/sample_pcd/" + pcd_file_name.replace(
+            pcd_file_type, ".xyz"
+        )
+
+        pcd = o3d.io.read_point_cloud(input)
+
+        createFileFolder(save_pcd_file_path)
+
+        o3d.io.write_point_cloud(save_pcd_file_path, pcd, write_ascii=True)
+
         return save_pcd_file_path
 
     def reconstructSurface(
@@ -118,14 +122,11 @@ class Reconstructor(object):
             os.makedirs(f"{recon_file_folder}")
 
         # build octree
-        TIME_START_OCTREE = time()
         build_octree_cmd = f"{EXPORT_QUERY_EXE} -i {save_pcd_file_path} -o {sample_file_prefix} -d {max_depth} -m {min_depth} "
         print(f"\n[EXECUTING] {build_octree_cmd}\n")
         os.system(build_octree_cmd)
-        TIME_END_OCTREE = time()
 
         # solve equation
-        TIME_START_SOLVE = time()
         print("[INFO][Reconstructor::reconstructSurface]")
         print("\t start solve equation...")
         self.solver.solve(
@@ -141,13 +142,11 @@ class Reconstructor(object):
             save_r,
             recon_mesh,
         )
-        TIME_END_SOLVE = time()
 
         if not recon_mesh:
             return True
 
         # reconstruction
-        TIME_START_RECON = time()
         with open(f"{solve_file_prefix}{PARAM_MIDFIX}isoval.txt", "r") as isoval_file:
             isoval = isoval_file.read()
             isoval = eval(isoval)
@@ -161,7 +160,6 @@ class Reconstructor(object):
         )
         print(f"\n[EXECUTING] {recon_cmd}\n")
         os.system(recon_cmd)
-        TIME_END_RECON = time()
 
         # copy recon results to output folder for faster visualization
         if True:
@@ -172,29 +170,4 @@ class Reconstructor(object):
 
             shutil.copyfile("./" + recon_file_prefix + PARAM_MIDFIX + "recon.ply", save_recon_folder_path + recon_file_basename + "_recon_pgr.ply")
 
-        print(
-            "\033[94m"
-            + "[Timer] Note: Some preprocessing (width computation) is actually in the Main part."
-            + "\033[0m"
-        )
-        print(
-            "\033[94m"
-            + f"[Timer] Pre:    {TIME_END_OCTREE-TIME_START_OCTREE}"
-            + "\033[0m"
-        )
-        print(
-            "\033[94m"
-            + f"[Timer] Main:   {TIME_END_SOLVE-TIME_START_SOLVE}"
-            + "\033[0m"
-        )
-        print(
-            "\033[94m"
-            + f"[Timer] Post:   {TIME_END_RECON-TIME_START_RECON}"
-            + "\033[0m"
-        )
-        print(
-            "\033[94m"
-            + f"[Timer] Total:  {TIME_END_OCTREE-TIME_START_OCTREE+TIME_END_SOLVE-TIME_START_SOLVE+TIME_END_RECON-TIME_START_RECON}"
-            + "\033[0m"
-        )
         return True

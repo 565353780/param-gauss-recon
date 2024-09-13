@@ -8,9 +8,9 @@ from param_gauss_recon.Config.constant import (
     R_SQ_STOP_EPS,
     TARGET_ISO_VALUE,
 )
+from param_gauss_recon.Method.io import load_sample_from_npy
 from param_gauss_recon.Method.utils import (
     get_width,
-    load_sample_from_npy,
     solve,
     get_query_vals,
 )
@@ -53,17 +53,16 @@ class Solver(object):
                 return_kdtree=True,
             )
 
-        print(
-            f"[In apps.PGRSolve] x_width range: [{x_width.min().item():.4f}, {x_width.max().item():.4f}], mean: {x_width.mean().item():.4f}"
-        )
+        print("[INFO][Solver::solve]")
+        print('\t x_width range: [', x_width.min().item(), ',', x_width.max().item(), '], mean: ', x_width.mean().item())
 
-        print("[In apps.PGRSolve] Starting to solve the system...")
+        print("[INFO][Solver::solve]")
+        print('\t start solve the system...')
         solved = solve(
             x_sample,
             y_base,
             x_width,
             chunk_size=CHUNK_SIZE,
-            dtype=FLT_TYPE,
             iso_value=TARGET_ISO_VALUE,
             r_sq_stop_eps=R_SQ_STOP_EPS,
             alpha=alpha,
@@ -95,7 +94,7 @@ class Solver(object):
         q_query = load_sample_from_npy(query, dtype=FLT_TYPE)
 
         if width_min >= width_max:
-            q_width = np.ones(q_query.shape[0], dtype=FLT_TYPE) * width_min
+            q_width = torch.ones(q_query.shape[0], dtype=FLT_TYPE) * width_min
         else:
             q_width = get_width(
                 q_query,

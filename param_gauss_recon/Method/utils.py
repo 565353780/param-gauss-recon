@@ -1,142 +1,16 @@
-import os
 import math
 import torch
 import numpy as np
-from time import time
 from typing import Union
 from tqdm import tqdm, trange
 from scipy.spatial import KDTree
 
-from param_gauss_recon.Config.constant import EPSILON
-
-
-def load_sample_from_npy(file_path: str, dtype) -> Union[torch.Tensor, None]:
-    if not os.path.exists(file_path):
-        print('[ERROR][utils::load_sample_from_npy]')
-        print('\t file not exist!')
-        print('\t file_path :', file_path)
-        return None
-
-    data = np.load(file_path)
-    data = torch.from_numpy(data).type(dtype)
-    return data
-
-
-def mul_A_T(x: torch.Tensor, y: torch.Tensor, xi: torch.Tensor,
-            x_width: torch.Tensor, chunk_size: int):
-    N_sample = y.shape[0]
-    n_y_chunks = N_sample // chunk_size + 1
-
-    lse = torch.zeros((3, N_sample), dtype=x.dtype)
-    # print('[In solver] Getting coefficients...')
-    for i in range(n_y_chunks):
-        y_chunk = y[i * chunk_size : (i + 1) * chunk_size]
-        A_chunk = get_A(x, y_chunk, x_width)
-        (
-            lse[0, i * chunk_size : (i + 1) * chunk_size],
-            lse[1, i * chunk_size : (i + 1) * chunk_size],
-            lse[2, i * chunk_size : (i + 1) * chunk_size],
-        ) = torch.einsum("jk,j", A_chunk, xi).reshape(3, -1)
-
-    return lse.reshape(-1)
-
-
-def get_A(x: torch.Tensor, y: torch.Tensor, x_width: torch.Tensor):
-    """
-    x: numpy array of shape [N_query, 3]
-    y: numpy array of shape [N_sample, 3]
-    x_width: [N_query]
-    ---
-    return:
-    A: numpy array of shape [N_query, 3 * N_sample]
-    """
-
-    N_query = x.shape[0]
-
-    A = x[:, None] - y[None, :]  # [N_query, N_sample, 3]
-    dist = torch.sqrt((A**2).sum(-1))  # [N_query, N_sample], |x^i-y^j|^2
-    dist[dist == 0.0] += EPSILON
-
-    # inv_dist = cnp.where(dist > x_width[:, None], 1/dist, 0.) # / 4 / cp.pi
-    inv_dist = torch.where(
-        dist > x_width[:, None], 1 / dist, 1 / x_width[:, None]
-    )  # / 4 / cp.pi
-    inv_cub_dist = inv_dist**3 / 4 / torch.pi  # [N_query, N_sample]
-
-    A *= inv_cub_dist[..., None]  # [N_query, N_sample, 3]
-    A = A.permute(0, 2, 1)
-    A = A.reshape(N_query, -1)
-
-    return -A
-
-
-def get_B(x: torch.Tensor, y: torch.Tensor,
-          chunk_size: int, x_width: torch.Tensor, alpha: float):
-    """
-    x: numpy array of shape [N_query, 3]
-    y: numpy array of shape [N_sample, 3]
-    ---
-    return:
-    B: numpy array of shape [N_query, N_query], which is AA^T
-    """
-    N_query = x.shape[0]
-
-    B = torch.zeros([N_query, N_query], dtype=x.dtype)
-
-    n_row_chunks = N_query // chunk_size + 1
-    n_col_chunks = n_row_chunks
-
-    for i in trange(n_row_chunks):
-        x_chunk_i = x[i * chunk_size : (i + 1) * chunk_size]
-
-        if x_chunk_i.shape[0] <= 0:
-            continue
-
-        x_chunk_eps_i = x_width[i * chunk_size : (i + 1) * chunk_size]
-        A_block_i = get_A(x_chunk_i, y, x_chunk_eps_i)
-
-        for j in range(i, n_col_chunks):
-            x_chunk_j = x[j * chunk_size : (j + 1) * chunk_size]
-
-            if x_chunk_j.shape[0] <= 0:
-                continue
-
-            x_chunk_eps_j = x_width[j * chunk_size : (j + 1) * chunk_size]
-            A_block_j = get_A(x_chunk_j, y, x_chunk_eps_j)
-
-            B[
-                i * chunk_size : (i + 1) * chunk_size,
-                j * chunk_size : (j + 1) * chunk_size,
-            ] = torch.einsum("ik,jk->ij", A_block_i, A_block_j)
-
-            if i != j:
-                B[
-                    j * chunk_size : (j + 1) * chunk_size,
-                    i * chunk_size : (i + 1) * chunk_size,
-                ] = B[
-                    i * chunk_size : (i + 1) * chunk_size,
-                    j * chunk_size : (j + 1) * chunk_size,
-                ].T
-            if i == j:
-                block_size = B[
-                    i * chunk_size : (i + 1) * chunk_size,
-                    j * chunk_size : (j + 1) * chunk_size,
-                ].shape[0]
-                if block_size <= 0:
-                    continue
-                diag_mask = torch.eye(block_size, dtype=bool)
-                # diag_sqr = (B[i*chunk_size:(i+1)*chunk_size, j*chunk_size:(j+1)*chunk_size][diag_mask])
-                B[
-                    i * chunk_size : (i + 1) * chunk_size,
-                    j * chunk_size : (j + 1) * chunk_size,
-                ][diag_mask] *= alpha
-
-    return B
+from param_gauss_recon.Method.kernel import mul_A_T, get_A, get_B
 
 
 def solve(
     x: torch.Tensor, y: torch.Tensor, x_width: torch.Tensor,
-    chunk_size: int, dtype, iso_value: float, r_sq_stop_eps: float,
+    chunk_size: int, iso_value: float, r_sq_stop_eps: float,
     alpha: float, max_iters: Union[int, None], save_r: Union[str, None]):
     """
     x: numpy array of shape [N_query, 3]
@@ -152,25 +26,19 @@ def solve(
     else:
         max_iters = min(max_iters, y.shape[0])
 
-    print("[In solver] Precomputing B...")
-    TIME_START_COMPUTE_B = time()
+    print("[INFO][utils::solve]")
+    print('\t start pre-computing B...')
     B = get_B(x, y, chunk_size, x_width, alpha)
-    TIME_END_COMPUTE_B = time()
-    print(
-        "\033[94m"
-        + f"[Timer] B computed in {TIME_END_COMPUTE_B-TIME_START_COMPUTE_B}"
-        + "\033[0m"
-    )
 
-    xi = torch.zeros(N_query, dtype=dtype)
-    r = torch.ones(N_query, dtype=dtype) * iso_value
+    xi = torch.zeros(N_query, dtype=x.dtype)
+    r = torch.ones(N_query, dtype=x.dtype) * iso_value
     p = r.clone()
 
     if save_r:
         r_list = []
 
-    print("[In solver] Starting CG iterations...")
-    TIME_START_CG = time()
+    print("[INFO][utils::solve]")
+    print('\t start CG iterations...')
     solve_progress_bar = trange(max_iters)
     k = -1  # to prevent error message when max_iters == 0
     for k in solve_progress_bar:
@@ -194,20 +62,11 @@ def solve(
         if r_sq < r_sq_stop_eps:
             solve_progress_bar.close()
             break
-    print("", end="")
-    print(f"[In solver] Converged in {k+1}/{max_iters} iterations")
     lse = mul_A_T(x, y, xi, x_width, chunk_size)
-    print("[In solver] Got linearized surface elements")
-    TIME_END_CG = time()
-
-    print(
-        "\033[94m" + f"[Timer] CG finished in {TIME_END_CG-TIME_START_CG}" + "\033[0m"
-    )
 
     if save_r:
         return lse, r_list
     return lse
-
 
 def get_query_vals(queries: torch.Tensor, q_width: torch.Tensor,
                    y_base: torch.Tensor, lse: torch.Tensor, chunk_size: int):
@@ -218,7 +77,8 @@ def get_query_vals(queries: torch.Tensor, q_width: torch.Tensor,
     q_cut_chunks = torch.split(q_width, split_num)
     query_vals = []
 
-    print("[In solver] Starting to query on the grid...")
+    print("[INFO][utils::solve]")
+    print('\t start query on the grid...')
     tqdmbar_query = tqdm(list(zip(query_chunks, q_cut_chunks)))
 
     for chunk, cut_chunk in tqdmbar_query:
