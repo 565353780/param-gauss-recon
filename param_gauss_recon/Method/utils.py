@@ -1,34 +1,33 @@
+import os
 import math
 import torch
 import numpy as np
 from time import time
-from tqdm import tqdm, trange
 from typing import Union
+from tqdm import tqdm, trange
 from scipy.spatial import KDTree
 
 from param_gauss_recon.Config.constant import EPSILON
 
 
-def load_sample_from_npy(file_path, return_cupy, dtype):
-    data = np.load(file_path)
-    data = data.astype(dtype)
-    if return_cupy:
-        import cupy as cp
+def load_sample_from_npy(file_path: str, dtype) -> Union[torch.Tensor, None]:
+    if not os.path.exists(file_path):
+        print('[ERROR][utils::load_sample_from_npy]')
+        print('\t file not exist!')
+        print('\t file_path :', file_path)
+        return None
 
-        data = cp.array(data)
+    data = np.load(file_path)
+    data = torch.from_numpy(data).type(dtype)
     return data
 
 
-def mul_A_T(x, y, xi, x_width, chunk_size, dtype):
-    if isinstance(x, np.ndarray):
-        cnp = np
-    else:
-        import cupy as cnp
-
+def mul_A_T(x: torch.Tensor, y: torch.Tensor, xi: torch.Tensor,
+            x_width: torch.Tensor, chunk_size: int):
     N_sample = y.shape[0]
     n_y_chunks = N_sample // chunk_size + 1
 
-    lse = cnp.zeros((3, N_sample), dtype=dtype)
+    lse = torch.zeros((3, N_sample), dtype=x.dtype)
     # print('[In solver] Getting coefficients...')
     for i in range(n_y_chunks):
         y_chunk = y[i * chunk_size : (i + 1) * chunk_size]
@@ -37,40 +36,35 @@ def mul_A_T(x, y, xi, x_width, chunk_size, dtype):
             lse[0, i * chunk_size : (i + 1) * chunk_size],
             lse[1, i * chunk_size : (i + 1) * chunk_size],
             lse[2, i * chunk_size : (i + 1) * chunk_size],
-        ) = cnp.einsum("jk,j", A_chunk, xi).reshape(3, -1)
+        ) = torch.einsum("jk,j", A_chunk, xi).reshape(3, -1)
 
     return lse.reshape(-1)
 
 
-def get_A(x, y, x_width):
+def get_A(x: torch.Tensor, y: torch.Tensor, x_width: torch.Tensor):
     """
-    x: numpy/cupy array of shape [N_query, 3]
-    y: numpy/cupy array of shape [N_sample, 3]
+    x: numpy array of shape [N_query, 3]
+    y: numpy array of shape [N_sample, 3]
     x_width: [N_query]
     ---
     return:
     A: numpy array of shape [N_query, 3 * N_sample]
     """
 
-    if isinstance(x, np.ndarray):
-        cnp = np
-    else:
-        import cupy as cnp
-
     N_query = x.shape[0]
 
     A = x[:, None] - y[None, :]  # [N_query, N_sample, 3]
-    dist = cnp.sqrt((A**2).sum(-1))  # [N_query, N_sample], |x^i-y^j|^2
+    dist = torch.sqrt((A**2).sum(-1))  # [N_query, N_sample], |x^i-y^j|^2
     dist[dist == 0.0] += EPSILON
 
     # inv_dist = cnp.where(dist > x_width[:, None], 1/dist, 0.) # / 4 / cp.pi
-    inv_dist = cnp.where(
+    inv_dist = torch.where(
         dist > x_width[:, None], 1 / dist, 1 / x_width[:, None]
     )  # / 4 / cp.pi
-    inv_cub_dist = inv_dist**3 / 4 / cnp.pi  # [N_query, N_sample]
+    inv_cub_dist = inv_dist**3 / 4 / torch.pi  # [N_query, N_sample]
 
     A *= inv_cub_dist[..., None]  # [N_query, N_sample, 3]
-    A = A.transpose((0, 2, 1))
+    A = A.permute(0, 2, 1)
     A = A.reshape(N_query, -1)
 
     return -A
@@ -113,7 +107,7 @@ def get_B(x: torch.Tensor, y: torch.Tensor,
             B[
                 i * chunk_size : (i + 1) * chunk_size,
                 j * chunk_size : (j + 1) * chunk_size,
-            ] = cnp.einsum("ik,jk->ij", A_block_i, A_block_j)
+            ] = torch.einsum("ik,jk->ij", A_block_i, A_block_j)
 
             if i != j:
                 B[
@@ -130,7 +124,7 @@ def get_B(x: torch.Tensor, y: torch.Tensor,
                 ].shape[0]
                 if block_size <= 0:
                     continue
-                diag_mask = cnp.eye(block_size, dtype=bool)
+                diag_mask = torch.eye(block_size, dtype=bool)
                 # diag_sqr = (B[i*chunk_size:(i+1)*chunk_size, j*chunk_size:(j+1)*chunk_size][diag_mask])
                 B[
                     i * chunk_size : (i + 1) * chunk_size,
@@ -143,7 +137,7 @@ def get_B(x: torch.Tensor, y: torch.Tensor,
 def solve(
     x: torch.Tensor, y: torch.Tensor, x_width: torch.Tensor,
     chunk_size: int, dtype, iso_value: float, r_sq_stop_eps: float,
-    alpha: float, max_iters: int, save_r: str):
+    alpha: float, max_iters: Union[int, None], save_r: Union[str, None]):
     """
     x: numpy array of shape [N_query, 3]
     y: numpy array of shape [N_sample, 3]
@@ -168,22 +162,19 @@ def solve(
         + "\033[0m"
     )
 
-    if cnp != np:
-        cnp._default_memory_pool.free_all_blocks()
-
-    xi = cnp.zeros(N_query, dtype=dtype)
-    r = cnp.ones(N_query, dtype=dtype) * iso_value
-    p = r.copy()
+    xi = torch.zeros(N_query, dtype=dtype)
+    r = torch.ones(N_query, dtype=dtype) * iso_value
+    p = r.clone()
 
     if save_r:
         r_list = []
 
     print("[In solver] Starting CG iterations...")
     TIME_START_CG = time()
-    solve_progress_bar = trange(max_iters))
+    solve_progress_bar = trange(max_iters)
     k = -1  # to prevent error message when max_iters == 0
     for k in solve_progress_bar:
-        Bp = cnp.matmul(B, p)
+        Bp = torch.matmul(B, p)
         r_sq = r.dot(r)
 
         alpha = r_sq / p.dot(Bp)
@@ -205,7 +196,7 @@ def solve(
             break
     print("", end="")
     print(f"[In solver] Converged in {k+1}/{max_iters} iterations")
-    lse = mul_A_T(x, y, xi, x_width, chunk_size, dtype)
+    lse = mul_A_T(x, y, xi, x_width, chunk_size)
     print("[In solver] Got linearized surface elements")
     TIME_END_CG = time()
 
@@ -218,27 +209,21 @@ def solve(
     return lse
 
 
-def get_query_vals(queries, q_width, y_base, lse, chunk_size):
-    if isinstance(y_base, np.ndarray):
-        cnp = np
-    else:
-        import cupy as cnp
-
+def get_query_vals(queries: torch.Tensor, q_width: torch.Tensor,
+                   y_base: torch.Tensor, lse: torch.Tensor, chunk_size: int):
     ### getting values
-    query_chunks = np.array_split(queries, len(queries) // chunk_size + 1)
-    q_cut_chunks = np.array_split(q_width, len(queries) // chunk_size + 1)
+    split_length = queries.shape[0] // chunk_size + 1
+    split_num = queries.shape[0] // split_length
+    query_chunks = torch.split(queries, split_num)
+    q_cut_chunks = torch.split(q_width, split_num)
     query_vals = []
 
     print("[In solver] Starting to query on the grid...")
     tqdmbar_query = tqdm(list(zip(query_chunks, q_cut_chunks)))
 
     for chunk, cut_chunk in tqdmbar_query:
-        chunk = cnp.array(chunk)
-        cut_chunk = cnp.array(cut_chunk)
         A_show = get_A(chunk, y_base, cut_chunk)
-        query_vals.append(
-            cnp.matmul(A_show, lse).get() if cnp != np else cnp.matmul(A_show, lse)
-        )
+        query_vals.append(torch.matmul(A_show, lse))
 
     query_vals = np.concatenate(query_vals, axis=0)
     return query_vals

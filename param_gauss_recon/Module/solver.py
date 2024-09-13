@@ -1,6 +1,5 @@
 import torch
 import numpy as np
-from time import time
 from typing import Union
 
 from param_gauss_recon.Config.constant import (
@@ -78,15 +77,9 @@ class Solver(object):
         else:
             lse = solved
 
-        if cpu:
-            lse_np = lse
-        else:
-            lse_np = lse.get()
-            cp._default_memory_pool.free_all_blocks()
-
         # saving solution as npy and xyz
         out_lse_array_npy = np.concatenate(
-            [y_base_np, -lse_np.reshape(3, -1).T], axis=1
+            [y_base_np, -lse.reshape(3, -1).T], axis=1
         )
         out_solve_npy = out_prefix + "lse"
         np.save(out_solve_npy, out_lse_array_npy)
@@ -99,38 +92,22 @@ class Solver(object):
             return True
 
         # eval on grid
-        TIME_START_EVAL = time()
-        q_query = load_sample_from_npy(query, return_cupy=False, dtype=FLT_TYPE)
+        q_query = load_sample_from_npy(query, dtype=FLT_TYPE)
 
         if width_min >= width_max:
             q_width = np.ones(q_query.shape[0], dtype=FLT_TYPE) * width_min
-            TIME_START_Q_WIDTH = 0
-            TIME_END_Q_WIDTH = 0
         else:
-            TIME_START_Q_WIDTH = time()
             q_width = get_width(
                 q_query,
                 k=width_k,
-                dtype=FLT_TYPE,
                 width_min=width_min,
                 width_max=width_max,
                 base_kdtree=base_kdtree,
                 return_kdtree=False,
             )
-            TIME_END_Q_WIDTH = time()
 
         print(
             f"[In apps.PGRSolve] q_width range: [{q_width.min().item():.4f}, {q_width.max().item():.4f}]"
-        )
-        print(
-            "\033[94m"
-            + f"[Timer] q_width computed in {TIME_END_Q_WIDTH-TIME_START_Q_WIDTH}"
-            + "\033[0m"
-        )
-        print(
-            "\033[94m"
-            + f"[Timer] both width computed in {TIME_END_X_WIDTH-TIME_START_X_WIDTH+TIME_END_Q_WIDTH-TIME_START_Q_WIDTH}"
-            + "\033[0m"
         )
 
         sample_vals = get_query_vals(x_sample, x_width, y_base, lse, CHUNK_SIZE)
@@ -155,10 +132,4 @@ class Solver(object):
         print(f"[In apps.PGRSolve] Saving grid eval values to {out_eval_grid_npy}")
         np.save(out_eval_grid_npy, query_vals)
 
-        TIME_END_EVAL = time()
-        print(
-            "\033[94m"
-            + f"[Timer] Eval on grid finished in {(TIME_END_EVAL-TIME_START_EVAL)-(TIME_END_Q_WIDTH-TIME_START_Q_WIDTH)}"
-            + "\033[0m"
-        )
         return True

@@ -1,3 +1,3 @@
-pip install -U open3d numpy cupy scipy tqdm
+pip install -U open3d numpy scipy tqdm
 
 compile.bat
