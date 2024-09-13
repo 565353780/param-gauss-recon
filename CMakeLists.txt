@@ -7,7 +7,12 @@ endif()
 
 project("ParametricGaussRecon")
 
+set(Open3D_ROOT ../../open3d-manage/3rd/open3d-devel-linux/)
 set(ROOT_FOLDER ../param-gauss-recon)
+
+set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(D_GLIBCXX_USE_CXX11_ABI 0)
 
 find_package(ZLIB REQUIRED)
 
@@ -33,12 +38,6 @@ target_compile_features(PGRLoadQuery PRIVATE cxx_std_17)
 target_include_directories(PGRLoadQuery PRIVATE "${ROOT_FOLDER}/3rd/cnpy/" "${ROOT_FOLDER}/3rd/CLI11/")
 target_link_libraries(PGRLoadQuery PRIVATE ZLIB::ZLIB)
 set_target_properties(PGRLoadQuery PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/")
-
-set(Open3D_ROOT ../../open3d-manage/3rd/open3d-devel-linux/)
-
-set(CMAKE_BUILD_TYPE Release)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(D_GLIBCXX_USE_CXX11_ABI 0)
 
 find_package(Open3D REQUIRED)
 if (Open3D_FOUND)
