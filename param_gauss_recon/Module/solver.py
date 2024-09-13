@@ -61,7 +61,7 @@ class Solver(object):
             lse = solved
 
         # saving solution as npy and xyz
-        out_lse = torch.cat([y_base, -lse.reshape(3, -1).T], dim=1)
+        out_lse = torch.cat([y_base, -lse.reshape(3, -1).permute(1, 0)], dim=1)
         out_lse_array = out_lse.cpu().numpy()
         out_solve_npy = out_prefix + "_lse"
         np.save(out_solve_npy, out_lse_array)

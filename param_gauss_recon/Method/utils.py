@@ -1,6 +1,5 @@
 import math
 import torch
-import numpy as np
 from typing import Union
 from tqdm import tqdm, trange
 from scipy.spatial import KDTree
