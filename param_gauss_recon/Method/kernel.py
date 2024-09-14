@@ -5,24 +5,6 @@ from param_gauss_recon.Config.constant import EPSILON
 from param_gauss_recon.Data.pgr_params import PGRParams
 
 
-def mul_A_T(x: torch.Tensor, y: torch.Tensor, xi: torch.Tensor,
-            x_width: torch.Tensor, chunk_size: int):
-    N_sample = y.shape[0]
-    n_y_chunks = N_sample // chunk_size + 1
-
-    lse = torch.zeros((3, N_sample), dtype=x.dtype, device=x.device)
-    for i in range(n_y_chunks):
-        y_chunk = y[i * chunk_size : (i + 1) * chunk_size]
-        A_chunk = get_A(x, y_chunk, x_width)
-        (
-            lse[0, i * chunk_size : (i + 1) * chunk_size],
-            lse[1, i * chunk_size : (i + 1) * chunk_size],
-            lse[2, i * chunk_size : (i + 1) * chunk_size],
-        ) = torch.einsum("jk,j", A_chunk, xi).reshape(3, -1)
-
-    return lse.reshape(-1)
-
-
 def get_A(x: torch.Tensor, y: torch.Tensor, x_width: torch.Tensor):
     """
     x: numpy array of shape [N_query, 3]
@@ -51,6 +33,22 @@ def get_A(x: torch.Tensor, y: torch.Tensor, x_width: torch.Tensor):
 
     return -A
 
+def mul_A_T(x: torch.Tensor, y: torch.Tensor, xi: torch.Tensor,
+            x_width: torch.Tensor, chunk_size: int):
+    N_sample = y.shape[0]
+    n_y_chunks = N_sample // chunk_size + 1
+
+    lse = torch.zeros((3, N_sample), dtype=x.dtype, device=x.device)
+    for i in range(n_y_chunks):
+        y_chunk = y[i * chunk_size : (i + 1) * chunk_size]
+        A_chunk = get_A(x, y_chunk, x_width)
+        (
+            lse[0, i * chunk_size : (i + 1) * chunk_size],
+            lse[1, i * chunk_size : (i + 1) * chunk_size],
+            lse[2, i * chunk_size : (i + 1) * chunk_size],
+        ) = torch.einsum("jk,j", A_chunk, xi).reshape(3, -1)
+
+    return lse.reshape(-1)
 
 def get_B(x: torch.Tensor, y: torch.Tensor,
           chunk_size: int, x_width: torch.Tensor, alpha: float):
@@ -99,7 +97,7 @@ def get_B(x: torch.Tensor, y: torch.Tensor,
                     i * chunk_size : (i + 1) * chunk_size,
                     j * chunk_size : (j + 1) * chunk_size,
                 ].T
-            if i == j:
+            else:
                 block_size = B[
                     i * chunk_size : (i + 1) * chunk_size,
                     j * chunk_size : (j + 1) * chunk_size,
@@ -126,7 +124,7 @@ def solve(
     return:
     lse:
     """
-    print("[INFO][utils::solve]")
+    print("[INFO][kernel::solve]")
     print('\t start pre-computing B...')
     B = get_B(x, y, chunk_size, x_width, pgr_params.alpha)
 
@@ -134,7 +132,7 @@ def solve(
     r = torch.ones(x.shape[0], dtype=x.dtype, device=x.device) * iso_value
     p = r.clone()
 
-    print("[INFO][utils::solve]")
+    print("[INFO][kernel::solve]")
     print('\t start CG iterations...')
     solve_progress_bar = trange(y.shape[0])
     for _ in solve_progress_bar:
