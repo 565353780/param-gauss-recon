@@ -165,8 +165,13 @@ const bool Reconstructor::reconstructSurface(
       std::filesystem::create_directories(save_recon_folder_path);
     }
 
+    const std::string copied_file_path = save_recon_folder_path + recon_file_basename + "_recon_pgr.ply";
+    if (std::filesystem::exists(copied_file_path)){
+      std::filesystem::remove(copied_file_path);
+    }
+
     std::filesystem::copy_file("./" + recon_file_prefix + param_midfix + "_recon.ply",
-        save_recon_folder_path + recon_file_basename + "_recon_pgr.ply");
+        copied_file_path);
   }
 
   return true;
