@@ -36,16 +36,14 @@ class Reconstructor(object):
                     print("[WARN][Reconstructor::toSampledPcdFile]")
                     print("\t toFPSPcdFile failed!")
                     print("\t try to start reconstruct with the input point cloud...")
-                    save_pcd_file_path = input
+                    return input
 
                 return save_pcd_file_path
 
         if '.xyz' in input:
             return input
 
-        save_pcd_file_path = input
         pcd_file_name = input.split("/")[-1]
-
         pcd_file_type = '.' + pcd_file_name.split('.')[-1]
 
         save_pcd_file_path = "./output/sample_pcd/" + pcd_file_name.replace(
@@ -93,7 +91,8 @@ class Reconstructor(object):
 
         # build octree
         build_octree_cmd = f"{EXPORT_QUERY_EXE} -i {save_pcd_file_path} -o {sample_file_prefix}" + pgr_params.toCMDStr()
-        print(f"\n[EXECUTING] {build_octree_cmd}\n")
+        print('[INFO][Reconstructor::reconstructSurface]')
+        print("\t [EXECUTING]", build_octree_cmd)
         os.system(build_octree_cmd)
 
         # solve equation
@@ -121,7 +120,8 @@ class Reconstructor(object):
             + f" --isov {isoval}"
             + f" -o {recon_file_prefix}{self.param_midfix}_recon.ply"
         )
-        print(f"\n[EXECUTING] {recon_cmd}\n")
+        print('[INFO][Reconstructor::reconstructSurface]')
+        print("\t [EXECUTING]", recon_cmd)
         os.system(recon_cmd)
 
         # copy recon results to output folder for faster visualization

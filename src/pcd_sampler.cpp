@@ -46,7 +46,8 @@ const bool PcdSampler::toFPSPcdFile(
     std::filesystem::create_directories(save_pcd_folder_path);
   }
 
-  if(!open3d::io::WritePointCloud(save_pcd_file_path, *down_sample_pcd)){
+  if (!open3d::io::WritePointCloud(save_pcd_file_path, *down_sample_pcd, open3d::io::WritePointCloudOption("auto",
+          open3d::io::WritePointCloudOption::IsAscii::Ascii))){
     std::cout << "[ERROR][PcdSampler::toFPSPcdFile]" << std::endl;
     std::cout << "\t WritePointCloud failed!" << std::endl;
     std::cout << "\t save_pcd_file_path : " << save_pcd_file_path << std::endl;
