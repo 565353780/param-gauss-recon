@@ -1,5 +1,4 @@
 #include "constant.h"
-#include <ATen/ops/einsum.h>
 #include "kernel.h"
 
 using namespace torch::indexing;
