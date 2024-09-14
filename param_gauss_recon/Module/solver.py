@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+from scipy.spatial import KDTree
 
 from param_gauss_recon.Config.constant import (
     CHUNK_SIZE,
@@ -34,7 +35,9 @@ class Solver(object):
 
         x_sample = y_base.clone()
 
-        x_width, base_kdtree = get_width(x_sample, pgr_params, y_base)
+        base_kdtree = KDTree(y_base.cpu().numpy())
+
+        x_width = get_width(x_sample, pgr_params, base_kdtree)
 
         print("[INFO][Solver::solve]")
         print('\t x_width range: [', x_width.min().item(), ',', x_width.max().item(), '], mean: ', x_width.mean().item())
@@ -72,7 +75,7 @@ class Solver(object):
             print('\t q_query :', q_query)
             return False
 
-        q_width, _ = get_width(q_query, pgr_params, base_kdtree=base_kdtree)
+        q_width = get_width(q_query, pgr_params, base_kdtree)
 
         print(
             f"[In apps.PGRSolve] q_width range: [{q_width.min().item():.4f}, {q_width.max().item():.4f}]"
