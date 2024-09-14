@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <torch/extension.h>
 
 class PGRParams {
@@ -7,6 +8,12 @@ public:
   PGRParams(){};
 
   const bool update();
+
+  const std::string toCMDStr();
+
+  const std::string toLogStr();
+
+  const bool outputInfo(const int &info_level = 0);
 
 public:
   int sample_point_num = 2000;
