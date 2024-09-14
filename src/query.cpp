@@ -34,7 +34,7 @@ const torch::Tensor get_query_vals(
 const torch::Tensor get_width(
     const torch::Tensor &query_set,
     const PGRParams &pgr_params,
-    const open3d::geometry::KDTreeFlann &base_kdtree){
+    KDTree &base_kdtree){
   const torch::TensorOptions opts = torch::TensorOptions().dtype(query_set.dtype()).device(query_set.device());
 
   if (pgr_params.width_min > pgr_params.width_max){
@@ -48,17 +48,24 @@ const torch::Tensor get_width(
   torch::Tensor x_knn_dist = torch::zeros({query_set.size(0), search_point_num}, opts);
 
   for (int i = 0; i < query_set.size(0); ++i){
-    std::vector<int> indices(search_point_num);
-    std::vector<double> distances(search_point_num);
-    const Eigen::Vector3d query_point(query_set[i][0].item<float>(), query_set[i][1].item<float>(), query_set[i][2].item<float>());
-    base_kdtree.SearchKNN(query_point, search_point_num, indices, distances);
+    std::vector<float> query_point = {query_set[i][0].item<float>(), query_set[i][1].item<float>(), query_set[i][2].item<float>()};
+
+    std::vector<size_t> indices(search_point_num);
+    std::vector<float> distances(search_point_num);
+
+    KNNResultSet<float> resultSet(search_point_num);
+    resultSet.init(&indices[0], &distances[0]);
+
+    base_kdtree.findNeighbors(resultSet, &query_point[0], SearchParameters(10));
 
     for (int j = 0; j < search_point_num; ++j){
       x_knn_dist[i][j] = float(distances[j]);
     }
   }
 
-  const torch::Tensor x_knn_dist_block = x_knn_dist.index({None, Slice(1, None)});
+  x_knn_dist = torch::sqrt(x_knn_dist);
+
+  const torch::Tensor x_knn_dist_block = x_knn_dist.index({Slice(), Slice(1, None)});
 
   torch::Tensor x_width = torch::sqrt(torch::einsum("nk,nk->n", {x_knn_dist_block, x_knn_dist_block}) / pgr_params.width_k);
   torch::clip(x_width, pgr_params.width_min, pgr_params.width_max);

@@ -1,12 +1,10 @@
 #include "io.h"
 #include "solver.h"
-#include "cnpy.h"
 #include "constant.h"
 #include "kernel.h"
 #include "io.h"
 #include "query.h"
 #include <fstream>
-#include <open3d/Open3D.h>
 
 
 const bool Solver::solve(
@@ -24,12 +22,9 @@ const bool Solver::solve(
 
   const torch::Tensor x_sample = y_base.clone();
 
-  const torch::Tensor y_base_cpu_double = y_base.cpu().toType(torch::kFloat64);
-
-  Eigen::MatrixXd matrix;
-  std::memcpy(matrix.data(), y_base_cpu_double.data_ptr<double>(), y_base_cpu_double.numel() * sizeof(double));
-
-  open3d::geometry::KDTreeFlann base_kdtree(matrix);
+  PointCloud pointcloud(y_base);
+  KDTree base_kdtree(3, pointcloud, KDTreeSingleIndexAdaptorParams(10));
+  base_kdtree.buildIndex();
 
   const torch::Tensor x_width = get_width(x_sample, pgr_params, base_kdtree);
 

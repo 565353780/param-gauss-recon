@@ -26,6 +26,7 @@ set(CNPY_SRC ${ROOT_FOLDER}/3rd/cnpy/cnpy.cpp)
 
 include_directories(${ROOT_FOLDER}/include)
 include_directories(${PGR_FOLDER}/include)
+include_directories(${ROOT_FOLDER}/3rd/nanoflann)
 
 add_executable(PGRExportQuery ${PGR_FOLDER}/PGRExportQuery.cpp ${PGR_SRC} ${CNPY_SRC})
 target_compile_features(PGRExportQuery PRIVATE cxx_std_17)

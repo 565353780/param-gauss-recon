@@ -1,8 +1,16 @@
 #pragma once
 
 #include "pgr_params.h"
+#include "pointcloud.hpp"
 #include <torch/extension.h>
-#include <open3d/Open3D.h>
+#include <nanoflann.hpp>
+
+using namespace nanoflann;
+
+typedef KDTreeSingleIndexAdaptor<
+        L2_Simple_Adaptor<float, PointCloud>,
+        PointCloud,
+        3> KDTree;
 
 const torch::Tensor get_query_vals(
     const torch::Tensor &queries,
@@ -14,4 +22,4 @@ const torch::Tensor get_query_vals(
 const torch::Tensor get_width(
     const torch::Tensor &query_set,
     const PGRParams &pgr_params,
-    const open3d::geometry::KDTreeFlann &base_kdtree);
+    KDTree &base_kdtree);

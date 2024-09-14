@@ -20,10 +20,23 @@ const torch::Tensor loadNpyData(
   const std::vector<size_t> &shape = data.shape;
   const std::vector<int64_t> tensor_shape(shape.begin(), shape.end());
 
-  const torch::TensorOptions opts = torch::TensorOptions().dtype(dtype).device(device);
-  const torch::Tensor data_tensor = torch::from_blob(data_ptr, tensor_shape, opts).clone();
+  const torch::TensorOptions opts = torch::TensorOptions().dtype(dtype).device(torch::kCPU);
+  const torch::Tensor data_tensor = torch::from_blob(data_ptr, tensor_shape, opts).clone().to(device);
 
   return data_tensor;
+}
+
+const Eigen::MatrixXd tensorToEigen(const torch::Tensor &tensor){
+  TORCH_CHECK(tensor.dim() == 2 && tensor.size(1) == 3, "Input tensor must be of shape [N, 3]");
+
+  torch::Tensor tensor_cpu = tensor.to(torch::kCPU).to(torch::kFloat64);
+
+  const double* data_ptr = tensor_cpu.data_ptr<double>();
+
+  Eigen::MatrixXd eigen_matrix = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(
+      data_ptr, tensor.size(0), tensor.size(1));
+
+  return eigen_matrix;
 }
 
 const bool saveAsTXT(
