@@ -52,7 +52,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 find_package(Python COMPONENTS Interpreter Development)
 find_package(pybind11 CONFIG)
 
-add_executable(${PROJECT_NAME} ./src/main.cpp ${SRC})
+add_executable(${PROJECT_NAME} ./src/main.cpp ${SRC} ${CNPY_SRC})
 
 find_library(TORCH_PYTHON_LIBRARY torch_python PATH "${TORCH_INSTALL_PREFIX}/lib")
 
@@ -60,3 +60,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE Open3D::Open3D)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} ${TORCH_PYTHON_LIBRARY})
 target_link_libraries(${PROJECT_NAME} PRIVATE pybind11::embed)
+
+target_include_directories(${PROJECT_NAME} PRIVATE "${ROOT_FOLDER}/3rd/cnpy/")
+target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
