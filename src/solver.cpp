@@ -37,12 +37,6 @@ const bool Solver::solve(
 
   const torch::Tensor out_lse = torch::cat({y_base, -lse.reshape({3, -1}).permute({1, 0})}, 1);
 
-  const int64_t num_elements = out_lse.numel();
-
-  std::vector<float> out_lse_array(num_elements);
-
-  std::memcpy(out_lse_array.data(), out_lse.data_ptr<float>(), num_elements * sizeof(float));
-
   const std::string out_solve_npy = out_prefix + "_lse";
   if (!saveTensorAsNpy(out_lse, out_solve_npy)){
     std::cout << "[ERROR][Solver::solve]" << std::endl;

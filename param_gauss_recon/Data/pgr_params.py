@@ -31,9 +31,6 @@ class PGRParams(object):
     def toLogStr(self) -> str:
         log_str = ""
 
-        if self.sample_point_num is not None:
-            log_str += "_sample_" + str(self.sample_point_num)
-
         log_str += "_k_" + str(self.width_k)
         log_str += "_min_" + str(self.width_min)
         log_str += "_max_" + str(self.width_max)

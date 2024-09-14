@@ -29,10 +29,6 @@ const std::string PGRParams::toCMDStr(){
 const std::string PGRParams::toLogStr(){
   std::string log_str = "";
 
-  if (sample_point_num > 0) {
-    log_str += "_sample_" + std::to_string(sample_point_num);
-  }
-
   log_str += "_k_" + std::to_string(width_k);
   log_str += "_min_" + std::to_string(width_min);
   log_str += "_max_" + std::to_string(width_max);

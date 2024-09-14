@@ -81,7 +81,12 @@ const bool saveAsTXT(
 const bool saveTensorAsNpy(
     const torch::Tensor &data,
     const std::string &save_file_path){
-  const std::string save_folder_path = std::filesystem::path(save_file_path).parent_path();
+  std::string valid_save_file_path = save_file_path;
+  if (valid_save_file_path.find(".npy") == std::string::npos){
+    valid_save_file_path += ".npy";
+  }
+
+  const std::string save_folder_path = std::filesystem::path(valid_save_file_path).parent_path();
   if (!std::filesystem::exists(save_folder_path)){
     std::filesystem::create_directories(save_folder_path);
   }
@@ -96,7 +101,7 @@ const bool saveTensorAsNpy(
 
   const std::vector<size_t> shape = std::vector<size_t>(cpu_float_data.sizes().begin(), cpu_float_data.sizes().end());
 
-  cnpy::npy_save(save_file_path, &data_array[0], shape, "w");
+  cnpy::npy_save(valid_save_file_path, &data_array[0], shape, "w");
 
   return true;
 }
