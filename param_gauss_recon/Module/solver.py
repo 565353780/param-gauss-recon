@@ -9,7 +9,7 @@ from param_gauss_recon.Config.constant import (
 )
 from param_gauss_recon.Data.pgr_params import PGRParams
 from param_gauss_recon.Method.io import loadNpyData
-from param_gauss_recon.Method.kernel import solve
+from param_gauss_recon.Method.kernel import solveLSE
 from param_gauss_recon.Method.query import get_width, get_query_vals
 
 
@@ -21,11 +21,9 @@ class Solver(object):
         self,
         base: str,
         query: str,
-        output: str,
+        out_prefix: str,
         pgr_params: PGRParams,
     ) -> bool:
-        out_prefix = output
-
         y_base = loadNpyData(base, pgr_params.dtype, pgr_params.device) # [N_x, 3]
         if y_base is None:
             print('[ERROR][Solver::solve]')
@@ -44,7 +42,7 @@ class Solver(object):
 
         print("[INFO][Solver::solve]")
         print('\t start solve the system...')
-        lse = solve(
+        lse = solveLSE(
             x_sample,
             y_base,
             x_width,
@@ -77,15 +75,14 @@ class Solver(object):
 
         q_width = get_width(q_query, pgr_params, base_kdtree)
 
-        print(
-            f"[In apps.PGRSolve] q_width range: [{q_width.min().item():.4f}, {q_width.max().item():.4f}]"
-        )
+        print('[INFO][Solver::solve]')
+        print('\t q_width range: [', q_width.min().item(), ',', q_width.max().item(), ']')
 
         sample_vals = get_query_vals(x_sample, x_width, y_base, lse, CHUNK_SIZE).cpu().numpy()
         iso_val = float(np.median(sample_vals))
-        print(
-            f"[In apps.PGRSolve] sample vals range: [{sample_vals.min():.4f}, {sample_vals.max():.4f}], mean: {sample_vals.mean():.4f}, median: {np.median(sample_vals):.4f}"
-        )
+        print('[INFO][Solver::solve]')
+        print('\t sample vals range: [', sample_vals.min(), ',', sample_vals.max(), '], mean:', sample_vals.mean(), ', median:', np.median(sample_vals))
+
         out_isoval_txt = out_prefix + "_isoval.txt"
         with open(out_isoval_txt, "w") as isoval_file:
             isoval_file.write(f"{iso_val:.8f}")
@@ -96,11 +93,13 @@ class Solver(object):
         query_vals = get_query_vals(q_query, q_width, y_base, lse, chunk_size)
 
         out_grid_width_npy = out_prefix + "_grid_width"
-        print(f"[In apps.PGRSolve] Saving grid widths to {out_grid_width_npy}")
+        print('[INFO][Solver::solve]')
+        print('\t saving grid widths to:', out_grid_width_npy)
         np.save(out_grid_width_npy, q_width.cpu().numpy())
 
         out_eval_grid_npy = out_prefix + "_eval_grid"
-        print(f"[In apps.PGRSolve] Saving grid eval values to {out_eval_grid_npy}")
+        print('[INFO][Solver::solve]')
+        print('\t saving grid eval values to:', out_eval_grid_npy)
         np.save(out_eval_grid_npy, query_vals.cpu().numpy())
 
         return True

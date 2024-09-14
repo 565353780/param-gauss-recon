@@ -109,7 +109,7 @@ const torch::Tensor get_B(
   return B;
 }
 
-const torch::Tensor solve(
+const torch::Tensor solveLSE(
     const torch::Tensor &x,
     const torch::Tensor &y,
     const torch::Tensor &x_width,
@@ -117,7 +117,7 @@ const torch::Tensor solve(
     const float &iso_value,
     const float &r_sq_stop_eps,
     const PGRParams &pgr_params){
-  std::cout << "[INFO][kernel::solve]" << std::endl;
+  std::cout << "[INFO][kernel::solveLSE]" << std::endl;
   std::cout << "\t start pre-computing B..." << std::endl;
   const torch::Tensor B = get_B(x, y, chunk_size, x_width, pgr_params.alpha);
 
@@ -126,7 +126,7 @@ const torch::Tensor solve(
   torch::Tensor r = torch::ones({x.size(0)}, opts) * iso_value;
   torch::Tensor p = r.clone();
 
-  std::cout << "[INFO][kernel::solve]" << std::endl;
+  std::cout << "[INFO][kernel::solveLSE]" << std::endl;
   std::cout << "\t start CG iterations..." << std::endl;
   for (int i = 0; i < y.size(0); ++i){
     const torch::Tensor Bp = torch::matmul(B, p);

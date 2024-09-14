@@ -22,7 +22,7 @@ const torch::Tensor get_B(
     const torch::Tensor &x_width,
     const float &alpha);
 
-const torch::Tensor solve(
+const torch::Tensor solveLSE(
     const torch::Tensor &x,
     const torch::Tensor &y,
     const torch::Tensor &x_width,

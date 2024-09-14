@@ -54,7 +54,7 @@ const torch::Tensor get_width(
     base_kdtree.SearchKNN(query_point, search_point_num, indices, distances);
 
     for (int j = 0; j < search_point_num; ++j){
-      x_knn_dist[i][j] = distances[j];
+      x_knn_dist[i][j] = float(distances[j]);
     }
   }
 

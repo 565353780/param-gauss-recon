@@ -113,7 +113,7 @@ def get_B(x: torch.Tensor, y: torch.Tensor,
 
     return B
 
-def solve(
+def solveLSE(
     x: torch.Tensor, y: torch.Tensor, x_width: torch.Tensor,
     chunk_size: int, iso_value: float, r_sq_stop_eps: float,
     pgr_params: PGRParams):
@@ -124,7 +124,7 @@ def solve(
     return:
     lse:
     """
-    print("[INFO][kernel::solve]")
+    print("[INFO][kernel::solveLSE]")
     print('\t start pre-computing B...')
     B = get_B(x, y, chunk_size, x_width, pgr_params.alpha)
 
@@ -132,7 +132,7 @@ def solve(
     r = torch.ones(x.shape[0], dtype=x.dtype, device=x.device) * iso_value
     p = r.clone()
 
-    print("[INFO][kernel::solve]")
+    print("[INFO][kernel::solveLSE]")
     print('\t start CG iterations...')
     solve_progress_bar = trange(y.shape[0])
     for _ in solve_progress_bar:
