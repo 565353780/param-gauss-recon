@@ -8,12 +8,11 @@ class PcdSampler {
 public:
   PcdSampler(){};
 
-  std::shared_ptr<open3d::geometry::PointCloud> toFPSPcd(
-      std::shared_ptr<open3d::geometry::PointCloud> &pcd,
-      const int &sample_point_num);
+  std::shared_ptr<open3d::geometry::PointCloud>
+  toFPSPcd(std::shared_ptr<open3d::geometry::PointCloud> &pcd,
+           const int &sample_point_num);
 
-  const bool toFPSPcdFile(
-      const std::string &pcd_file_path,
-      const int &sample_point_num,
-      const std::string &save_pcd_file_path);
+  const bool toFPSPcdFile(const std::string &pcd_file_path,
+                          const int &sample_point_num,
+                          const std::string &save_pcd_file_path);
 };

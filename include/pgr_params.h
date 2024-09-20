@@ -5,9 +5,7 @@
 
 class PGRParams {
 public:
-  PGRParams(){
-    update();
-  };
+  PGRParams() { update(); };
 
   const bool update();
 
