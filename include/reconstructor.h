@@ -13,8 +13,10 @@ public:
       const int &sample_point_num = -1);
 
   const bool reconstructSurface(
+      PGRParams &pgr_params,
       const std::string &input,
-      PGRParams &pgr_params);
+      const std::string &save_mesh_file_path="",
+      const bool &overwrite=false);
 
 public:
   std::string param_midfix;

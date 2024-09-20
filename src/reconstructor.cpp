@@ -75,8 +75,10 @@ const std::string Reconstructor::toSampledPcdFile(
 }
 
 const bool Reconstructor::reconstructSurface(
+    PGRParams &pgr_params,
     const std::string &input,
-    PGRParams &pgr_params){
+    const std::string &save_mesh_file_path,
+    const bool &overwrite){
   const std::string save_pcd_file_path = toSampledPcdFile(input, pgr_params.sample_point_num);
   if (save_pcd_file_path == ""){
     std::cout << "[ERROR][Reconstructor::reconstructSurface]" << std::endl;
@@ -89,11 +91,15 @@ const bool Reconstructor::reconstructSurface(
 
   pgr_params.outputInfo();
 
-  const std::string in_filename = save_pcd_file_path;
+  const std::string &in_filename = save_pcd_file_path;
   const std::string file_name = std::filesystem::path(in_filename).filename();
   const std::string data_index = file_name.substr(0, file_name.length() - 4);
 
   const std::string results_folder = "results/";
+  if (std::filesystem::exists(results_folder)){
+    std::filesystem::remove_all(results_folder);
+  }
+
   const std::string sample_file_folder = results_folder + data_index + "/samples/";
   const std::string solve_file_folder = results_folder + data_index + "/solve/";
   const std::string recon_file_folder = results_folder + data_index + "/recon/";
@@ -157,9 +163,12 @@ const bool Reconstructor::reconstructSurface(
   std::cout << "\t [EXECUTING] " << recon_cmd << std::endl;
   system(recon_cmd.c_str());
 
-  if (true){
+  if (save_mesh_file_path == ""){
     const std::string recon_file_basename = std::filesystem::path(recon_file_prefix).filename();
     const std::string save_recon_folder_path = "./output/recon/" + param_midfix.substr(1, param_midfix.length()) + "/";
+    if (std::filesystem::exists(save_recon_folder_path)){
+      std::filesystem::remove_all(save_recon_folder_path);
+    }
 
     if (!std::filesystem::exists(save_recon_folder_path)){
       std::filesystem::create_directories(save_recon_folder_path);
@@ -172,7 +181,24 @@ const bool Reconstructor::reconstructSurface(
 
     std::filesystem::copy_file("./" + recon_file_prefix + param_midfix + "_recon.ply",
         copied_file_path);
+
+    return true;
   }
+
+  if (std::filesystem::exists(save_mesh_file_path)){
+    if (!overwrite){
+      return true;
+    }
+
+    std::filesystem::remove(save_mesh_file_path);
+  }
+
+  const std::string save_mesh_folder_path = std::filesystem::path(save_mesh_file_path).parent_path();
+  if (!std::filesystem::exists(save_mesh_folder_path)){
+    std::filesystem::create_directories(save_mesh_folder_path);
+  }
+
+  std::filesystem::copy_file("./" + recon_file_prefix + param_midfix + "_recon.ply", save_mesh_file_path);
 
   return true;
 }
