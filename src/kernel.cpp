@@ -36,6 +36,7 @@ const torch::Tensor mul_A_T(
 
   const torch::TensorOptions opts = torch::TensorOptions().dtype(x.dtype()).device(x.device());
   torch::Tensor lse = torch::zeros({3, N_sample}, opts);
+
   for (int i = 0; i < n_y_chunks; ++i){
     const Slice chunk_slice = Slice(i * chunk_size, (i + 1) * chunk_size);
     const torch::Tensor y_chunk = y.index({chunk_slice});

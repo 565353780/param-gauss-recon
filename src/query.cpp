@@ -47,7 +47,13 @@ const torch::Tensor get_width(
 
   torch::Tensor x_knn_dist = torch::zeros({query_set.size(0), search_point_num}, opts);
 
+  std::cout << "[INFO][query::get_width]" << std::endl;
+  std::cout << "\t start query KDTree..." << std::endl;
   for (int i = 0; i < query_set.size(0); ++i){
+    if ((i + 1) % 100 == 0){
+      std::cout << "\r\t\t iter : " << (i + 1) << " / " << query_set.size(0);
+    }
+
     std::vector<float> query_point = {query_set[i][0].item<float>(), query_set[i][1].item<float>(), query_set[i][2].item<float>()};
 
     std::vector<size_t> indices(search_point_num);
@@ -62,6 +68,7 @@ const torch::Tensor get_width(
       x_knn_dist[i][j] = float(distances[j]);
     }
   }
+  std::cout << std::endl;
 
   x_knn_dist = torch::sqrt(x_knn_dist);
 
