@@ -79,6 +79,16 @@ const bool Reconstructor::reconstructSurface(
     const std::string &input,
     const std::string &save_mesh_file_path,
     const bool &overwrite){
+  if (save_mesh_file_path != ""){
+    if (std::filesystem::exists(save_mesh_file_path)){
+      if (!overwrite){
+        return true;
+      }
+
+      std::filesystem::remove(save_mesh_file_path);
+    }
+  }
+
   const std::string save_pcd_file_path = toSampledPcdFile(input, pgr_params.sample_point_num);
   if (save_pcd_file_path == ""){
     std::cout << "[ERROR][Reconstructor::reconstructSurface]" << std::endl;
@@ -123,7 +133,12 @@ const bool Reconstructor::reconstructSurface(
   const std::string build_octree_cmd = EXPORT_QUERY_EXE + " -i " + save_pcd_file_path + " -o " + sample_file_prefix + pgr_params.toCMDStr();
   std::cout << "[INFO][Reconstructor::reconstructSurface]" << std::endl;
   std::cout << "\t [EXECUTING] " << build_octree_cmd << std::endl;
-  system(build_octree_cmd.c_str());
+  const int octree_state = system(build_octree_cmd.c_str());
+  if (octree_state != 0){
+    std::cout << "[ERROR][Reconstructor::reconstructSurface]" << std::endl;
+    std::cout << "\t EXECUTING failed!" << std::endl;
+    return false;
+  }
 
   std::cout << "[INFO][Reconstructor::reconstructSurface]" << std::endl;
   std::cout << "\t start solve equation..." << std::endl;
@@ -161,7 +176,13 @@ const bool Reconstructor::reconstructSurface(
     + " -o " + recon_file_prefix + param_midfix + "_recon.ply";
   std::cout << "[INFO][Reconstructor::reconstructSurface]" << std::endl;
   std::cout << "\t [EXECUTING] " << recon_cmd << std::endl;
-  system(recon_cmd.c_str());
+  const int recon_state = system(recon_cmd.c_str());
+
+  if (recon_state != 0){
+    std::cout << "[ERROR][Reconstructor::reconstructSurface]" << std::endl;
+    std::cout << "\t EXECUTING failed!" << std::endl;
+    return false;
+  }
 
   if (save_mesh_file_path == ""){
     const std::string recon_file_basename = std::filesystem::path(recon_file_prefix).filename();
@@ -183,14 +204,6 @@ const bool Reconstructor::reconstructSurface(
         copied_file_path);
 
     return true;
-  }
-
-  if (std::filesystem::exists(save_mesh_file_path)){
-    if (!overwrite){
-      return true;
-    }
-
-    std::filesystem::remove(save_mesh_file_path);
   }
 
   const std::string save_mesh_folder_path = std::filesystem::path(save_mesh_file_path).parent_path();
