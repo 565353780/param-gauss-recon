@@ -1,4 +1,4 @@
-#include "io.h"
+#include "pgr_io.h"
 #include <filesystem>
 #include <fstream>
 #include <iomanip> // For setting float precision
@@ -8,7 +8,7 @@ const torch::Tensor loadNpyData(const std::string &file_path,
                                 const torch::Dtype &dtype,
                                 const torch::Device &device) {
   if (!std::filesystem::exists(file_path)) {
-    std::cout << "[ERROR][io::loadNpyData]" << std::endl;
+    std::cout << "[ERROR][pgr_io::loadNpyData]" << std::endl;
     std::cout << "\t file not exist!" << std::endl;
     std::cout << "\t file_path : " << file_path << std::endl;
     return torch::empty(0);
@@ -54,7 +54,7 @@ const bool saveAsTXT(const std::string &filename, const torch::Tensor &data,
   std::ofstream out_file(filename);
 
   if (!out_file.is_open()) {
-    std::cout << "[ERROR][io::saveAsTXT]" << std::endl;
+    std::cout << "[ERROR][pgr_io::saveAsTXT]" << std::endl;
     std::cout << "\t open out file failed!" << std::endl;
     std::cout << "\t out_file : " << filename << std::endl;
     return false;
