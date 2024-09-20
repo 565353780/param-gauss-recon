@@ -1,11 +1,11 @@
-#include "pcd.h"
+#include "pgr_pcd.h"
 #include <cmath>
 
 std::shared_ptr<open3d::geometry::PointCloud>
 downSample(std::shared_ptr<open3d::geometry::PointCloud> &pcd,
            const int &sample_point_num, const float &voxel_size) {
   if (sample_point_num < 1) {
-    std::cout << "[WARN][pcd::downSample]" << std::endl;
+    std::cout << "[WARN][pgr_pcd::downSample]" << std::endl;
     std::cout << "\t sample point num < 1! will use source pcd!" << std::endl;
     std::cout << "\t sample_point_num : " << sample_point_num << std::endl;
     return pcd;
