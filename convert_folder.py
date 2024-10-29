@@ -9,12 +9,12 @@ if True:
     width_min = '0.0015' # 0.0015
     width_max = '0.015' # 0.015
 
-if False:
+if True:
     sample = '4000'
-    alpha = '1.05' # 1.05
-    width_k = '7' # 7
-    width_min = '0.06' # 0.0015
-    width_max = '0.06' # 0.015
+    alpha = '2.0' # 1.05
+    width_k = '16' # 7
+    width_min = '0.04' # 0.0015
+    width_max = '0.4' # 0.015
 
 pcd_filename_list = os.listdir(folder_path)
 pcd_filename_list.sort()
