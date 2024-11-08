@@ -9,6 +9,8 @@ public:
 
   const bool update();
 
+  const bool useCPU();
+
   const std::string toCMDStr();
 
   const std::string toLogStr();

@@ -1,5 +1,6 @@
 #include "kernel.h"
 #include "constant.h"
+#include <string>
 
 using namespace torch::indexing;
 
@@ -65,6 +66,8 @@ const torch::Tensor get_B(const torch::Tensor &x, const torch::Tensor &y,
   const int n_row_chunks = std::floor(N_query / chunk_size) + 1;
   const int n_col_chunks = n_row_chunks;
 
+  std::cout << "[INFO][kernel::get_B]" << std::endl;
+  std::cout << "\t start pre-computing B..." << std::endl;
   for (int i = 0; i < n_row_chunks; ++i) {
     const Slice row_chunk_slice = Slice(i * chunk_size, (i + 1) * chunk_size);
     const torch::Tensor x_chunk_i = x.index({row_chunk_slice});
@@ -107,7 +110,12 @@ const torch::Tensor get_B(const torch::Tensor &x, const torch::Tensor &y,
         B.index_put_({row_chunk_slice, col_chunk_slice}, B_block);
       }
     }
+
+    std::cout << "\r\t running at " << std::to_string(i + 1) << " / "
+              << std::to_string(n_row_chunks) << "...    ";
   }
+
+  std::cout << std::endl;
 
   return B;
 }
@@ -117,8 +125,6 @@ const torch::Tensor solveLSE(const torch::Tensor &x, const torch::Tensor &y,
                              const int &chunk_size, const float &iso_value,
                              const float &r_sq_stop_eps,
                              const PGRParams &pgr_params) {
-  std::cout << "[INFO][kernel::solveLSE]" << std::endl;
-  std::cout << "\t start pre-computing B..." << std::endl;
   const torch::Tensor B = get_B(x, y, chunk_size, x_width, pgr_params.alpha);
 
   const torch::TensorOptions opts =
@@ -143,7 +149,12 @@ const torch::Tensor solveLSE(const torch::Tensor &x, const torch::Tensor &y,
     if (r_sq < r_sq_stop_eps) {
       break;
     }
+
+    std::cout << "\r\t running at " << std::to_string(i + 1) << " / "
+              << std::to_string(y.size(0)) << "...    ";
   }
+
+  std::cout << std::endl;
 
   const torch::Tensor lse = mul_A_T(x, y, xi, x_width, chunk_size);
 

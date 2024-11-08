@@ -16,6 +16,11 @@ const bool PGRParams::update() {
   return true;
 }
 
+const bool PGRParams::useCPU() {
+  device = torch::kCPU;
+  return true;
+}
+
 const std::string PGRParams::toCMDStr() {
   std::string cmd_str = "";
 
