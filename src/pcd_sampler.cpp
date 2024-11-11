@@ -6,10 +6,10 @@ std::shared_ptr<open3d::geometry::PointCloud>
 PcdSampler::toFPSPcd(std::shared_ptr<open3d::geometry::PointCloud> &pcd,
                      const int &sample_point_num) {
   const int pcd_point_num = pcd->points_.size();
-  if (pcd_point_num < sample_point_num) {
+  if (pcd_point_num <= sample_point_num) {
     std::cout << "[WARN][PcdSampler::toFPSPcd]" << std::endl;
     std::cout << "\t pcd point num = " << pcd_point_num
-              << " , < sample point num = " << sample_point_num << " !"
+              << " , <= sample point num = " << sample_point_num << " !"
               << std::endl;
     std::cout << "\t will directly return source point cloud!" << std::endl;
 

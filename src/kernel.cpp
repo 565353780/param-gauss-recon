@@ -150,7 +150,7 @@ const torch::Tensor solveLSE(const torch::Tensor &x, const torch::Tensor &y,
       break;
     }
 
-    std::cout << "\r\t error " << std::to_string(r_sq) << " / " << r_sq_stop_eps
+    std::cout << "\r\t error " << r_sq << " / " << r_sq_stop_eps
               << ", running at " << std::to_string(i + 1) << " / "
               << std::to_string(y.size(0)) << "...    ";
   }
