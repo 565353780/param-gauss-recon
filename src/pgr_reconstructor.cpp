@@ -1,10 +1,20 @@
 #include "pgr_reconstructor.h"
 #include "constant.h"
+#include <Eigen/src/Core/Matrix.h>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <memory>
+#include <open3d/io/TriangleMeshIO.h>
 #include <string>
+
+const bool PGRReconstructor::reset() {
+  translate_ = Eigen::Vector3d(0.0f, 0.0f, 0.0f);
+  scale_ = Eigen::Vector3d(1.0f, 1.0f, 1.0f);
+  scale_inverse_ = Eigen::Vector3d(1.0f, 1.0f, 1.0f);
+
+  return true;
+}
 
 const std::string
 PGRReconstructor::toSampledPcdFile(const std::string &input,
@@ -87,8 +97,151 @@ PGRReconstructor::toSampledPcdFile(const std::string &input,
   return save_pcd_file_path;
 }
 
+const bool PGRReconstructor::toNormalizedSampledPcdFile(
+    const std::string &input, const int &sample_point_num,
+    const std::string &save_normalize_pcd_file_path, const bool &overwrite) {
+  if (!std::filesystem::exists(input)) {
+    std::cerr << "[ERROR][PGRReconstructor::toNormalizedSampledPcdFile]"
+              << std::endl;
+    std::cerr << "\t input pcd file not exist!" << std::endl;
+    std::cerr << "\t input: " << input << std::endl;
+
+    return false;
+  }
+
+  if (!overwrite) {
+    if (std::filesystem::exists(save_normalize_pcd_file_path)) {
+      return true;
+    }
+
+    std::filesystem::remove(save_normalize_pcd_file_path);
+  }
+
+  const std::string save_pcd_file_path =
+      toSampledPcdFile(input, sample_point_num);
+
+  if (save_pcd_file_path == "") {
+    std::cerr << "[ERROR][PGRReconstructor::toNormalizedSampledPcdFile]"
+              << std::endl;
+    std::cerr << "\t toSampledPcdFile failed!" << std::endl;
+    std::cerr << "\t input : " << input << std::endl;
+
+    return false;
+  }
+
+  std::shared_ptr<open3d::geometry::PointCloud> pcd =
+      std::make_shared<open3d::geometry::PointCloud>();
+  if (!open3d::io::ReadPointCloud(save_pcd_file_path, *pcd)) {
+    std::cerr << "[ERROR][PGRReconstructor::toNormalizedSampledPcdFile]"
+              << std::endl;
+    std::cerr << "\t ReadPointCloud failed!" << std::endl;
+    std::cerr << "\t save_pcd_file_path: " << save_pcd_file_path << std::endl;
+
+    return false;
+  }
+
+  auto bounding_box = pcd->GetAxisAlignedBoundingBox();
+
+  Eigen::Vector3d min_bound = bounding_box.min_bound_;
+  Eigen::Vector3d max_bound = bounding_box.max_bound_;
+  Eigen::Vector3d range = max_bound - min_bound;
+
+  translate_ = 0.5 * (min_bound + max_bound);
+  for (int i = 0; i < 3; ++i) {
+    if (range[i] == 0) {
+      scale_[i] = 1.0;
+      scale_inverse_[i] = 1.0;
+    } else {
+      scale_[i] = range[i];
+      scale_inverse_[i] = 1.0 / range[i];
+    }
+  }
+
+  for (Eigen::Vector3d &point : pcd->points_) {
+    point -= translate_;
+    point = point.cwiseProduct(scale_inverse_);
+  }
+
+  const std::string save_normalize_pcd_folder_path =
+      std::filesystem::path(save_normalize_pcd_file_path).parent_path();
+  if (!std::filesystem::exists(save_normalize_pcd_folder_path)) {
+    std::filesystem::create_directories(save_normalize_pcd_folder_path);
+  }
+
+  if (!open3d::io::WritePointCloud(
+          save_normalize_pcd_file_path, *pcd,
+          open3d::io::WritePointCloudOption(
+              "auto", open3d::io::WritePointCloudOption::IsAscii::Ascii))) {
+    std::cerr << "[ERROR][PGRReconstructor::toNormalizedSampledPcdFile]"
+              << std::endl;
+    std::cerr << "\t WritePointCloud failed!" << std::endl;
+    std::cerr << "\t save_normalize_pcd_file_path : "
+              << save_normalize_pcd_file_path << std::endl;
+
+    return false;
+  }
+
+  return true;
+}
+
+const bool PGRReconstructor::toInvertNormalizedMeshFile(
+    const std::string &mesh_file_path, const std::string &save_mesh_file_path,
+    const bool &overwrite) {
+  if (!std::filesystem::exists(mesh_file_path)) {
+    std::cerr << "[ERROR][PGRReconstructor::toInvertNormalizedMeshFile]"
+              << std::endl;
+    std::cerr << "\t mesh file not exist!" << std::endl;
+    std::cerr << "\t mesh_file_path: " << mesh_file_path << std::endl;
+
+    return false;
+  }
+
+  if (!overwrite) {
+    if (std::filesystem::exists(save_mesh_file_path)) {
+      return true;
+    }
+
+    std::filesystem::remove(save_mesh_file_path);
+  }
+
+  std::shared_ptr<open3d::geometry::TriangleMesh> mesh =
+      std::make_shared<open3d::geometry::TriangleMesh>();
+  if (!open3d::io::ReadTriangleMesh(mesh_file_path, *mesh)) {
+    std::cerr << "[ERROR][PGRReconstructor::toInvertNormalizedMeshFile]"
+              << std::endl;
+    std::cerr << "\t ReadTriangleMesh failed!" << std::endl;
+    std::cerr << "\t mesh_file_path: " << mesh_file_path << std::endl;
+
+    return false;
+  }
+
+  for (Eigen::Vector3d &vertex : mesh->vertices_) {
+    vertex = vertex.cwiseProduct(scale_);
+    vertex += translate_;
+  }
+
+  const std::string save_mesh_folder_path =
+      std::filesystem::path(save_mesh_file_path).parent_path();
+  if (!std::filesystem::exists(save_mesh_folder_path)) {
+    std::filesystem::create_directories(save_mesh_folder_path);
+  }
+
+  if (!open3d::io::WriteTriangleMesh(save_mesh_file_path, *mesh, true)) {
+    std::cerr << "[ERROR][PGRReconstructor::toInvertNormalizedMeshFile]"
+              << std::endl;
+    std::cerr << "\t WriteTriangleMesh failed!" << std::endl;
+    std::cerr << "\t save_mesh_file_path : " << save_mesh_file_path
+              << std::endl;
+
+    return false;
+  }
+
+  return true;
+}
+
 const bool PGRReconstructor::reconstructSurface(
     PGRParams &pgr_params, const std::string &input,
+    const std::string &save_normalize_pcd_file_path,
     const std::string &save_mesh_file_path, const bool &overwrite) {
   if (save_mesh_file_path != "") {
     if (std::filesystem::exists(save_mesh_file_path)) {
@@ -100,11 +253,10 @@ const bool PGRReconstructor::reconstructSurface(
     }
   }
 
-  const std::string save_pcd_file_path =
-      toSampledPcdFile(input, pgr_params.sample_point_num);
-  if (save_pcd_file_path == "") {
+  if (!toNormalizedSampledPcdFile(input, pgr_params.sample_point_num,
+                                  save_normalize_pcd_file_path, overwrite)) {
     std::cout << "[ERROR][PGRReconstructor::reconstructSurface]" << std::endl;
-    std::cout << "\t toSampledPcdFile failed!" << std::endl;
+    std::cout << "\t toNormalizedSampledPcdFile failed!" << std::endl;
     std::cout << "\t input : " << input << std::endl;
     return false;
   }
@@ -113,7 +265,7 @@ const bool PGRReconstructor::reconstructSurface(
 
   pgr_params.outputInfo();
 
-  const std::string &in_filename = save_pcd_file_path;
+  const std::string &in_filename = save_normalize_pcd_file_path;
   const std::string file_name = std::filesystem::path(in_filename).filename();
   const std::string data_index = file_name.substr(0, file_name.length() - 4);
 
@@ -144,7 +296,7 @@ const bool PGRReconstructor::reconstructSurface(
   }
 
   const std::string build_octree_cmd =
-      EXPORT_QUERY_EXE + " -i " + save_pcd_file_path + " -o " +
+      EXPORT_QUERY_EXE + " -i " + save_normalize_pcd_file_path + " -o " +
       sample_file_prefix + pgr_params.toCMDStr();
   std::cout << "[INFO][PGRReconstructor::reconstructSurface]" << std::endl;
   std::cout << "\t [EXECUTING] " << build_octree_cmd << std::endl;
@@ -171,9 +323,9 @@ const bool PGRReconstructor::reconstructSurface(
   std::ifstream infile(isoval_txt_file_path);
 
   if (!infile) {
-    std::cout << "[ERROR][PGRReconstructor::reconstructSurface]" << std::endl;
-    std::cout << "\t open isoval file failed!" << std::endl;
-    std::cout << "\t isoval_txt_file_path : " << isoval_txt_file_path
+    std::cerr << "[ERROR][PGRReconstructor::reconstructSurface]" << std::endl;
+    std::cerr << "\t open isoval file failed!" << std::endl;
+    std::cerr << "\t isoval_txt_file_path : " << isoval_txt_file_path
               << std::endl;
     return false;
   }
@@ -194,8 +346,8 @@ const bool PGRReconstructor::reconstructSurface(
   const int recon_state = system(recon_cmd.c_str());
 
   if (recon_state != 0) {
-    std::cout << "[ERROR][PGRReconstructor::reconstructSurface]" << std::endl;
-    std::cout << "\t EXECUTING failed!" << std::endl;
+    std::cerr << "[ERROR][PGRReconstructor::reconstructSurface]" << std::endl;
+    std::cerr << "\t EXECUTING failed!" << std::endl;
     return false;
   }
 
@@ -218,9 +370,14 @@ const bool PGRReconstructor::reconstructSurface(
       std::filesystem::remove(copied_file_path);
     }
 
-    std::filesystem::copy_file("./" + recon_file_prefix + param_midfix +
-                                   "_recon.ply",
-                               copied_file_path);
+    if (!toInvertNormalizedMeshFile("./" + recon_file_prefix + param_midfix +
+                                        "_recon.ply",
+                                    copied_file_path, overwrite)) {
+      std::cerr << "[ERROR][PGRReconstructor::reconstructSurface]" << std::endl;
+      std::cerr << "\t toInvertNormalizedMeshFile failed!" << std::endl;
+
+      return false;
+    }
 
     return true;
   }
@@ -231,9 +388,14 @@ const bool PGRReconstructor::reconstructSurface(
     std::filesystem::create_directories(save_mesh_folder_path);
   }
 
-  std::filesystem::copy_file("./" + recon_file_prefix + param_midfix +
-                                 "_recon.ply",
-                             save_mesh_file_path);
+  if (!toInvertNormalizedMeshFile("./" + recon_file_prefix + param_midfix +
+                                      "_recon.ply",
+                                  save_mesh_file_path, overwrite)) {
+    std::cerr << "[ERROR][PGRReconstructor::reconstructSurface]" << std::endl;
+    std::cerr << "\t toInvertNormalizedMeshFile failed!" << std::endl;
+
+    return false;
+  }
 
   return true;
 }
