@@ -25,7 +25,7 @@ downSample(std::shared_ptr<open3d::geometry::PointCloud> &pcd,
     const int every_k_points =
         std::ceil(pcd->points_.size() / sample_point_num);
     std::shared_ptr<open3d::geometry::PointCloud> down_sample_pcd =
-        pcd->UniformDownSample(sample_point_num);
+        pcd->UniformDownSample(every_k_points);
     return down_sample_pcd;
   }
 }
