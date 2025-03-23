@@ -12,7 +12,11 @@ pcd_file_path = "../gaussian-splatting/output/NeRF_mic_train_20240515_17:49:58/p
 pcd_file_path = "/Users/fufu/Downloads/Dataset/DTU/dtu_37_max/archive/2dgs-pcd.ply"
 pcd_file_path = "/home/chli/Downloads/bunny.ply"
 
-sample = '2000'
+pcd_file_path = "/home/chli/chLi/Dataset/Thingi10K/mesh_pcd/46602.ply"
+pcd_file_path = "/home/chli/chLi/Dataset/Thingi10K/mesh_pcd/61258.ply"
+pcd_file_path = "/home/chli/chLi/Dataset/Thingi10K/mesh_pcd/609436.ply"
+
+sample = '20000'
 alpha = '1.05' # 1.05
 width_k = '7' # 7
 width_min = '0.0015' # 0.0015
