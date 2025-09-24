@@ -1,7 +1,13 @@
+#!/bin/bash
+
+ENV_NAME='conda-amcax'
+
 export CC=$(which gcc)
 export CXX=$(which g++)
 echo "Using CC: $CC"
 echo "Using CXX: $CXX"
+
+source ./output/${ENV_NAME}/bin/activate
 
 rm -rf build
 
