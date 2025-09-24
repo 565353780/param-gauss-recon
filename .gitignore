@@ -29,6 +29,7 @@ MANIFEST
 open3d-devel-linux/
 *.tar.gz
 *.tar.xz
+conda-amcax/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
