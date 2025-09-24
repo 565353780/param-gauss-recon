@@ -109,3 +109,103 @@ const bool saveTensorAsNpy(const torch::Tensor &data,
 
   return true;
 }
+
+const bool createFileFolder(const std::string &file_path) {
+  std::filesystem::path dir_path =
+      std::filesystem::path(file_path).parent_path();
+
+  if (std::filesystem::exists(dir_path)) {
+    return true;
+  }
+
+  std::filesystem::create_directories(dir_path);
+
+  return true;
+}
+
+const bool savePcdFile(const std::vector<double> &vertices,
+                       const std::string &file_path) {
+  if (vertices.size() % 3 != 0) {
+    std::cerr << "Error: vertices vector size should be a multiple of 3!"
+              << std::endl;
+    return false;
+  }
+
+  open3d::geometry::PointCloud point_cloud;
+
+  for (size_t i = 0; i < vertices.size(); i += 3) {
+    Eigen::Vector3d point(vertices[i], vertices[i + 1], vertices[i + 2]);
+    point_cloud.points_.push_back(point);
+  }
+
+  createFileFolder(file_path);
+
+  return open3d::io::WritePointCloud(file_path, point_cloud, true);
+}
+
+MeshData readPcdData(const std::string &ply_file) {
+  MeshData mesh_data;
+
+  // 加载三角网格
+  open3d::geometry::PointCloud pcd;
+  if (!open3d::io::ReadPointCloud(ply_file, pcd)) {
+    std::cerr << "Failed to read the mesh file." << std::endl;
+    return mesh_data;
+  }
+
+  // 获取顶点数据
+  const auto &vertices = pcd.points_;
+
+  // 填充 MeshData 结构体
+  mesh_data.vertices.reserve(vertices.size() * 3);
+  for (const auto &vertex : vertices) {
+    mesh_data.vertices.push_back(vertex[0]);
+    mesh_data.vertices.push_back(vertex[1]);
+    mesh_data.vertices.push_back(vertex[2]);
+  }
+
+  return mesh_data;
+}
+
+MeshData readMeshData(const std::string &ply_file) {
+  MeshData mesh_data;
+
+  // 加载三角网格
+  open3d::geometry::TriangleMesh mesh;
+  if (!open3d::io::ReadTriangleMesh(ply_file, mesh)) {
+    std::cerr << "Failed to read the mesh file." << std::endl;
+    return mesh_data;
+  }
+
+  // 估计法线
+  mesh.ComputeVertexNormals();
+
+  // 获取顶点数据
+  const auto &vertices = mesh.vertices_;
+  const auto &triangles = mesh.triangles_;
+  const auto &normals = mesh.vertex_normals_;
+
+  // 填充 MeshData 结构体
+  mesh_data.vertices.reserve(vertices.size() * 3);
+  for (const auto &vertex : vertices) {
+    mesh_data.vertices.push_back(vertex[0]);
+    mesh_data.vertices.push_back(vertex[1]);
+    mesh_data.vertices.push_back(vertex[2]);
+  }
+
+  mesh_data.indices.reserve(triangles.size() * 3);
+  for (const auto &triangle : triangles) {
+    mesh_data.indices.push_back(triangle[0]);
+    mesh_data.indices.push_back(triangle[1]);
+    mesh_data.indices.push_back(triangle[2]);
+  }
+
+  mesh_data.normals.reserve(normals.size() * 3);
+  for (const auto &normal : normals) {
+    mesh_data.normals.push_back(normal[0]);
+    mesh_data.normals.push_back(normal[1]);
+    mesh_data.normals.push_back(normal[2]);
+  }
+
+  return mesh_data;
+}
