@@ -3,6 +3,12 @@
 #include "pgr_reconstructor.h"
 #include <iostream>
 
+enum class CloudMeshAlgo {
+  Poisson, // Poisson Reconstruction
+  PGR,     // Parametric Gauss Recon
+  WNNC,    // Winding Number
+};
+
 void CloudMeshPGR(MeshData &ioMesh, const std::string &tmp_folder_path) {
   std::string valid_tmp_folder_path = tmp_folder_path;
   if (valid_tmp_folder_path.back() != '/') {
@@ -34,24 +40,33 @@ void CloudMeshPGR(MeshData &ioMesh, const std::string &tmp_folder_path) {
   return;
 }
 
-class DataClean {
-public:
-  DataClean() {};
+namespace DataClean {
+void CloudMesh(MeshData &ioMesh, const std::string &tmp_folder_path,
+               const CloudMeshAlgo &algo = CloudMeshAlgo::Poisson) {
+  switch (algo) {
+  case CloudMeshAlgo::Poisson: {
+    std::cout << "Poisson Reconstruction not implemented yet." << std::endl;
+    break;
+  }
+  case CloudMeshAlgo::PGR: {
+    CloudMeshPGR(ioMesh, tmp_folder_path);
+    break;
+  }
+  case CloudMeshAlgo::WNNC: {
+    std::cout << "WNNC not implemented yet." << std::endl;
+    break;
+  }
+  }
 
-  void CloudMesh(MeshData &ioMesh, const std::string &tmp_folder_path);
-};
-
-void DataClean::CloudMesh(MeshData &ioMesh,
-                          const std::string &tmp_folder_path) {
-  CloudMeshPGR(ioMesh, tmp_folder_path);
   return;
 }
+} // namespace DataClean
 
 void testAPI(const std::string &pcd_file_path,
              const std::string &tmp_folder_path) {
   MeshData mesh_data = readPcdData(pcd_file_path);
 
-  DataClean().CloudMesh(mesh_data, tmp_folder_path);
+  DataClean::CloudMesh(mesh_data, tmp_folder_path, CloudMeshAlgo::PGR);
 
   std::cout << "mesh vertices size: " << mesh_data.vertices.size() / 3
             << std::endl;
