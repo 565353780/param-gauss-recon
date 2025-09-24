@@ -22,7 +22,7 @@ class Reconstructor(object):
             if sample_point_num > 0:
                 pcd_file_name = input.split("/")[-1]
 
-                pcd_file_type = '.' + pcd_file_name.split('.')[-1]
+                pcd_file_type = "." + pcd_file_name.split(".")[-1]
 
                 save_pcd_file_path = "./output/sample_pcd/" + pcd_file_name.replace(
                     pcd_file_type, "_sample-" + str(sample_point_num) + ".xyz"
@@ -40,11 +40,11 @@ class Reconstructor(object):
 
                 return save_pcd_file_path
 
-        if '.xyz' in input:
+        if ".xyz" in input:
             return input
 
         pcd_file_name = input.split("/")[-1]
-        pcd_file_type = '.' + pcd_file_name.split('.')[-1]
+        pcd_file_type = "." + pcd_file_name.split(".")[-1]
 
         save_pcd_file_path = "./output/sample_pcd/" + pcd_file_name.replace(
             pcd_file_type, ".xyz"
@@ -62,6 +62,8 @@ class Reconstructor(object):
         self,
         input: str,
         pgr_params: PGRParams,
+        tmp_folder_path: str = "./output/",
+        save_mesh_file_path: Union[str, None] = None,
     ) -> bool:
         save_pcd_file_path = self.toSampledPcdFile(input, pgr_params.sample_point_num)
 
@@ -72,7 +74,7 @@ class Reconstructor(object):
         in_filename = save_pcd_file_path
         data_index = in_filename.split("/")[-1][:-4]
 
-        results_folder = "results/"
+        results_folder = tmp_folder_path
         sample_file_folder = results_folder + data_index + "/samples/"
         solve_file_folder = results_folder + data_index + "/solve/"
         recon_file_folder = results_folder + data_index + "/recon/"
@@ -83,15 +85,16 @@ class Reconstructor(object):
 
         if not os.path.exists(sample_file_folder):
             os.makedirs(f"{sample_file_folder}")
-            copyfile(
-                in_filename, join(sample_file_folder, basename(in_filename))
-            )
+            copyfile(in_filename, join(sample_file_folder, basename(in_filename)))
         os.makedirs(solve_file_folder, exist_ok=True)
         os.makedirs(recon_file_folder, exist_ok=True)
 
         # build octree
-        build_octree_cmd = f"{EXPORT_QUERY_EXE} -i {save_pcd_file_path} -o {sample_file_prefix}" + pgr_params.toCMDStr()
-        print('[INFO][Reconstructor::reconstructSurface]')
+        build_octree_cmd = (
+            f"{EXPORT_QUERY_EXE} -i {save_pcd_file_path} -o {sample_file_prefix}"
+            + pgr_params.toCMDStr()
+        )
+        print("[INFO][Reconstructor::reconstructSurface]")
         print("\t [EXECUTING]", build_octree_cmd)
         os.system(build_octree_cmd)
 
@@ -102,35 +105,36 @@ class Reconstructor(object):
             sample_file_prefix + "_normalized.npy",
             sample_file_prefix + "_for_query.npy",
             solve_file_prefix + self.param_midfix,
-            pgr_params
+            pgr_params,
         )
 
         if not pgr_params.recon_mesh:
             return True
 
         # reconstruction
-        with open(f"{solve_file_prefix}{self.param_midfix}_isoval.txt", "r") as isoval_file:
+        with open(
+            f"{solve_file_prefix}{self.param_midfix}_isoval.txt", "r"
+        ) as isoval_file:
             isoval = isoval_file.read()
             isoval = eval(isoval)
 
         recon_cmd = (
-            f"{LOAD_QUERY_EXE} -i {in_filename}" + pgr_params.toCMDStr()
+            f"{LOAD_QUERY_EXE} -i {in_filename}"
+            + pgr_params.toCMDStr()
             + f" --grid_val {solve_file_prefix}{self.param_midfix}_eval_grid.npy"
             + f" --grid_width {solve_file_prefix}{self.param_midfix}_grid_width.npy"
             + f" --isov {isoval}"
             + f" -o {recon_file_prefix}{self.param_midfix}_recon.ply"
         )
-        print('[INFO][Reconstructor::reconstructSurface]')
+        print("[INFO][Reconstructor::reconstructSurface]")
         print("\t [EXECUTING]", recon_cmd)
         os.system(recon_cmd)
 
-        # copy recon results to output folder for faster visualization
-        if True:
-            recon_file_basename = recon_file_prefix.split('/')[-1]
-            save_recon_folder_path = './output/recon/' + self.param_midfix[1:] + '/'
+        if save_mesh_file_path is not None:
+            createFileFolder(save_mesh_file_path)
 
-            os.makedirs(save_recon_folder_path, exist_ok=True)
-
-            copyfile("./" + recon_file_prefix + self.param_midfix + "_recon.ply", save_recon_folder_path + recon_file_basename + "_recon_pgr.ply")
-
+            copyfile(
+                "./" + recon_file_prefix + self.param_midfix + "_recon.ply",
+                save_mesh_file_path,
+            )
         return True

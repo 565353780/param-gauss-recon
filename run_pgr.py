@@ -8,7 +8,16 @@ parser.add_argument(
     "input",
     help="xyz format point cloud input, this should be the one to construct the final query octree",
 )
-parser.add_argument("-s", "--sample", type=int, default=60000, help="sample point num")
+parser.add_argument(
+    "tmp_folder_path",
+    help="tmp reuslts save folder path",
+)
+parser.add_argument(
+    "save_mesh_file_path",
+    help="final recon mesh file save path",
+)
+parser.add_argument("--cpu", action="store_true", help="Use cpu only")
+parser.add_argument("-s", "--sample", type=int, default=20000, help="sample point num")
 parser.add_argument(
     "-wk", "--width_k", type=int, default=7, help="k in knn for width estimation"
 )
@@ -41,6 +50,12 @@ pgr_params.width_max = args.width_max
 pgr_params.alpha = args.alpha
 pgr_params.min_depth = args.min_depth
 pgr_params.max_depth = args.max_depth
+pgr_params.device = "cpu" if args.cpu else "cuda"
 
 reconstructor = Reconstructor()
-reconstructor.reconstructSurface(args.input, pgr_params)
+reconstructor.reconstructSurface(
+    args.input,
+    pgr_params,
+    args.tmp_folder_path,
+    args.save_mesh_file_path,
+)
