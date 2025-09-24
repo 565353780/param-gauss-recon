@@ -1,5 +1,3 @@
 ENV_NAME='conda-amcax'
 
-mkdir ./output
-
-conda pack -n amcax -o ./output/${ENV_NAME}.tar.gz
+conda pack -n amcax -o ./3rd/${ENV_NAME}.tar.gz

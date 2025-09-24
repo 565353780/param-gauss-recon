@@ -27,6 +27,8 @@ share/python-wheels/
 *.egg
 MANIFEST
 open3d-devel-linux/
+*.tar.gz
+*.tar.xz
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

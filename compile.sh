@@ -7,7 +7,7 @@ export CXX=$(which g++)
 echo "Using CC: $CC"
 echo "Using CXX: $CXX"
 
-source ./output/${ENV_NAME}/bin/activate
+source ./3rd/${ENV_NAME}/bin/activate
 
 rm -rf build
 
