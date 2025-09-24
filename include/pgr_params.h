@@ -18,7 +18,7 @@ public:
   const bool outputInfo(const int &info_level = 0);
 
 public:
-  int sample_point_num = 2000;
+  int sample_point_num = 20000;
   int width_k = 7;
   float width_min = 0.0015;
   float width_max = 0.015;
