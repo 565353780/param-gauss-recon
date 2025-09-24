@@ -31,7 +31,6 @@ void createDirectoryIfNeeded(const std::string &filePath) {
 bool deleteFileIfExists(const std::string &filePath) {
   if (std::filesystem::exists(filePath)) {
     if (std::remove(filePath.c_str()) == 0) {
-      std::cout << "Deleted existing file: " << filePath << std::endl;
       return true;
     } else {
       std::cerr << "Error deleting file: " << filePath << std::endl;
@@ -124,6 +123,10 @@ bool loadPlyFile(const std::string &filename, MeshData &mesh_data) {
     std::cerr << "Error: PLY header doesn't end properly." << std::endl;
     return false;
   }
+
+  mesh_data.vertices.clear();
+  mesh_data.indices.clear();
+  mesh_data.normals.clear();
 
   // 读取顶点数据
   mesh_data.vertices.reserve(numVertices * 3); // 每个顶点有3个坐标(x, y, z)

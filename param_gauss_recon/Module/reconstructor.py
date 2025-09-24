@@ -118,13 +118,17 @@ class Reconstructor(object):
             isoval = isoval_file.read()
             isoval = eval(isoval)
 
+        actual_save_mesh_file_path = (
+            "./" + recon_file_prefix + self.param_midfix + "_recon.ply"
+        )
+
         recon_cmd = (
             f"{LOAD_QUERY_EXE} -i {in_filename}"
             + pgr_params.toCMDStr()
             + f" --grid_val {solve_file_prefix}{self.param_midfix}_eval_grid.npy"
             + f" --grid_width {solve_file_prefix}{self.param_midfix}_grid_width.npy"
             + f" --isov {isoval}"
-            + f" -o {recon_file_prefix}{self.param_midfix}_recon.ply"
+            + f" -o {actual_save_mesh_file_path}"
         )
         print("[INFO][Reconstructor::reconstructSurface]")
         print("\t [EXECUTING]", recon_cmd)
@@ -133,8 +137,8 @@ class Reconstructor(object):
         if save_mesh_file_path is not None:
             createFileFolder(save_mesh_file_path)
 
-            copyfile(
-                "./" + recon_file_prefix + self.param_midfix + "_recon.ply",
-                save_mesh_file_path,
-            )
+            mesh = o3d.io.read_triangle_mesh(actual_save_mesh_file_path)
+            mesh.compute_vertex_normals()
+
+            o3d.io.write_triangle_mesh(save_mesh_file_path, mesh, write_ascii=True)
         return True
