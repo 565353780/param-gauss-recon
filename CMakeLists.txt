@@ -7,12 +7,14 @@ endif()
 
 project("ParametricGaussRecon")
 
-set(Open3D_ROOT ../../open3d-manage/3rd/open3d-devel-linux/)
+set(Open3D_ROOT ../param-gauss-recon/3rd/open3d-devel-linux)
 set(ROOT_FOLDER ../param-gauss-recon)
 
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(D_GLIBCXX_USE_CXX11_ABI 0)
+
+list(APPEND CMAKE_PREFIX_PATH ${Open3D_ROOT})
 
 find_package(ZLIB REQUIRED)
 
@@ -40,6 +42,11 @@ target_include_directories(PGRLoadQuery PRIVATE "${ROOT_FOLDER}/3rd/cnpy/" "${RO
 target_link_libraries(PGRLoadQuery PRIVATE ZLIB::ZLIB)
 set_target_properties(PGRLoadQuery PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/")
 
+find_package(Eigen3 REQUIRED NO_MODULE)
+if (EIGEN3_FOUND)
+    include_directories(${EIGEN3_INCLUDE_DIR})
+endif()
+
 find_package(Open3D REQUIRED)
 if (Open3D_FOUND)
   message(STATUS "Found Open3D ${Open3D_VERSION}")
@@ -60,6 +67,11 @@ find_library(TORCH_PYTHON_LIBRARY torch_python PATH "${TORCH_INSTALL_PREFIX}/lib
 target_link_libraries(${PROJECT_NAME} PRIVATE Open3D::Open3D)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} ${TORCH_PYTHON_LIBRARY})
+if(TORCH_CUDA)
+  target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_CUDA_LIBRARIES})
+endif()
+target_include_directories(${PROJECT_NAME} PRIVATE ${TORCH_INCLUDE_DIRS})
+
 target_link_libraries(${PROJECT_NAME} PRIVATE pybind11::embed)
 
 target_include_directories(${PROJECT_NAME} PRIVATE "${ROOT_FOLDER}/3rd/cnpy/")

@@ -1,3 +1,8 @@
+export CC=$(which gcc)
+export CXX=$(which g++)
+echo "Using CC: $CC"
+echo "Using CXX: $CXX"
+
 rm -rf build
 
 mkdir build
