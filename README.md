@@ -41,10 +41,8 @@ scp <user-id>@192.168.11.3:/mnt/sdb/data/chli/conda/conda-amcax-win.tar.gz ./3rd
 
 ```bash
 # linux
-source ./3rd/conda-amcax/bin/activate
 ./simple_cpp/build/PGRSimpleCall
-# win, must use cmd since it have "call" command
-call .\3rd\conda-amcax-win\Scripts\activate.bat
+# win
 .\simple_cpp\build\PGRSimpleCall.exe
 ```
 

@@ -188,10 +188,13 @@ bool runPython(const std::string &target_folder_path,
   std::string command;
 
 #ifdef _WIN32
-  command =
-      "cmd /C \"cd /d " + normalized_path + " && " + running_command + "\"";
+  command = "cmd /C \"cd /d " + normalized_path +
+            " && call .\3rd\conda-amcax-win\Scripts\activate.bat && " +
+            running_command + "\"";
 #else
-  command = "cd " + normalized_path + " && " + running_command;
+  command = "cd " + normalized_path +
+            " && bash -c 'source ./3rd/conda-amcax/bin/activate && " +
+            running_command + "'";
 #endif
 
   std::cout << "Executing command: " << command << std::endl;
