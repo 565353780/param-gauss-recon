@@ -55,4 +55,9 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} ${TORCH_PYTHON_
 
 target_link_libraries(${PROJECT_NAME} PRIVATE pybind11::embed)
 target_include_directories(${PROJECT_NAME} PRIVATE "${ROOT_FOLDER}/3rd/cnpy/")
-target_link_libraries(${PROJECT_NAME} PRIVATE z)
+
+if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  target_link_libraries(${PROJECT_NAME} PRIVATE z)
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  target_link_libraries(${PROJECT_NAME} PRIVATE zd)
+endif()
