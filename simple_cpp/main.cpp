@@ -16,7 +16,7 @@ void CloudMeshPGR(MeshData &ioMesh, const std::string &tmp_folder_path) {
   const double alpha = 1.05;
   const int d = 10;
   const int md = 1;
-  const bool use_cpu = false;
+  const bool use_cpu = true;
 
   std::string valid_tmp_folder_path = tmp_folder_path;
   if (valid_tmp_folder_path.back() != '/') {
@@ -86,7 +86,12 @@ void testAPI(const std::string &pcd_file_path,
              const std::string &tmp_folder_path,
              const CloudMeshAlgo &algo = CloudMeshAlgo::Poisson) {
   MeshData mesh_data;
-  loadPlyFile(pcd_file_path, mesh_data);
+  const bool load_success = loadPlyFile(pcd_file_path, mesh_data);
+  if (!load_success) {
+    std::cerr << "Failed to load point cloud from: " << pcd_file_path
+              << std::endl;
+    return;
+  }
 
   DataClean::CloudMesh(mesh_data, tmp_folder_path, algo);
 
@@ -100,7 +105,14 @@ void testAPI(const std::string &pcd_file_path,
 }
 
 int main() {
-  testAPI("/home/chli/chLi/Dataset/Famous/bunny-v2.ply", "./output/test1/",
-          CloudMeshAlgo::PGR);
+  std::vector<std::string> pcd_file_path_vec;
+  pcd_file_path_vec.push_back("/home/chli/chLi/Dataset/Famous/bunny-v2.ply");
+  pcd_file_path_vec.push_back("C:/github/bunny-v2.ply");
+
+  for (auto pcd_file_path : pcd_file_path_vec) {
+    if (std::filesystem::exists(pcd_file_path)) {
+      testAPI(pcd_file_path, "./output/test1/", CloudMeshAlgo::PGR);
+    }
+  }
   return 1;
 }

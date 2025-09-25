@@ -9,3 +9,6 @@ cd build
 
 cmake ..
 make -j
+
+cd ../..
+ln -s ./3rd/zlib/build/libz.so ./bin/libz.so

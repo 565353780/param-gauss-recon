@@ -9,3 +9,6 @@ cd build
 
 cmake ..
 nmake
+
+cd ..\..
+copy .\3rd\zlib\build\zd.dll .\bin\zd.dll
