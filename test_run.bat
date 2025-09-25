@@ -9,4 +9,3 @@ python run_pgr.py ^
   -a 1.05 ^
   -d 10 ^
   -md 1 ^
-  --cpu

@@ -16,7 +16,7 @@ void CloudMeshPGR(MeshData &ioMesh, const std::string &tmp_folder_path) {
   const double alpha = 1.05;
   const int d = 10;
   const int md = 1;
-  const bool use_cpu = true;
+  const bool use_cpu = false;
 
   std::string valid_tmp_folder_path = tmp_folder_path;
   if (valid_tmp_folder_path.back() != '/') {
