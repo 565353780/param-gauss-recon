@@ -9,6 +9,7 @@ project("ParametricGaussRecon")
 
 set(ROOT_FOLDER ../param-gauss-recon)
 set(Open3D_ROOT ${ROOT_FOLDER}/3rd/open3d-devel-linux)
+set(ZLIB_ROOT ${ROOT_FOLDER}/3rd/zlib/build)
 
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -16,7 +17,9 @@ set(D_GLIBCXX_USE_CXX11_ABI 0)
 
 list(APPEND CMAKE_PREFIX_PATH ${Open3D_ROOT})
 
-find_package(ZLIB REQUIRED)
+link_directories(${ZLIB_ROOT})
+# find_package(ZLIB REQUIRED)
+
 file(GLOB_RECURSE SRC ${ROOT_FOLDER}/src/*.cpp)
 list(FILTER SRC EXCLUDE REGEX "main.cpp")
 
@@ -52,4 +55,4 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} ${TORCH_PYTHON_
 
 target_link_libraries(${PROJECT_NAME} PRIVATE pybind11::embed)
 target_include_directories(${PROJECT_NAME} PRIVATE "${ROOT_FOLDER}/3rd/cnpy/")
-target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
+target_link_libraries(${PROJECT_NAME} PRIVATE z)
