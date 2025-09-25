@@ -13,16 +13,9 @@ visual studio terminal # for win only
 
 ```bash
 # linux:
-conda-amcax.tar.gz
-->
-param-gauss-recon/3rd/conda-amcax.tar.gz
-```
-
-```bash
+scp <user-id>@192.168.11.3:/mnt/sdb/data/chli/conda/conda-amcax.tar.gz ./3rd/conda-amcax.tar.gz
 # win:
-conda-amcax-win.tar.gz
-->
-param-gauss-recon/3rd/conda-amcax-win.tar.gz
+scp <user-id>@192.168.11.3:/mnt/sdb/data/chli/conda/conda-amcax-win.tar.gz ./3rd/conda-amcax-win.tar.gz
 ```
 
 ### 2. 恢复conda环境
