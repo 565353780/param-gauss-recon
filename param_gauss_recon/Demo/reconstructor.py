@@ -4,7 +4,7 @@ from param_gauss_recon.Data.pgr_params import PGRParams
 from param_gauss_recon.Module.reconstructor import Reconstructor
 
 
-def main():
+def demo():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "input",
@@ -63,7 +63,3 @@ def main():
         args.tmp_folder_path,
         args.save_mesh_file_path,
     )
-
-
-if __name__ == "__main__":
-    main()
