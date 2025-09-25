@@ -1,5 +1,7 @@
 # Byte-compiled / optimized / DLL files
 __pycache__
+.cache
+.DS_Store
 
 # C extensions
 *.so
@@ -10,9 +12,6 @@ open3d-devel-linux/
 *.tar.gz
 *.tar.xz
 conda-amcax/
-
-# compiled
-.DS_Store
 
 # output
 output
