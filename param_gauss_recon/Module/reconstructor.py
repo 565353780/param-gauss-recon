@@ -119,7 +119,7 @@ class Reconstructor(object):
             isoval = eval(isoval)
 
         actual_save_mesh_file_path = (
-            "./" + recon_file_prefix + self.param_midfix + "_recon.ply"
+            recon_file_prefix + self.param_midfix + "_recon.ply"
         )
 
         recon_cmd = (

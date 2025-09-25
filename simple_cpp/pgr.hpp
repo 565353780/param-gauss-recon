@@ -168,7 +168,40 @@ bool loadPlyFile(const std::string &filename, MeshData &mesh_data) {
   return true;
 }
 
-void CloudMeshPGR(MeshData &ioMesh, const std::string &pgr_folder_path,
+const std::string normalize_path(const std::string &path) {
+#ifdef _WIN32
+  std::string normalized = path;
+  for (auto &c : normalized) {
+    if (c == '/')
+      c = '\\';
+  }
+  return normalized;
+#else
+  return path;
+#endif
+}
+
+bool runPython(const std::string &target_folder_path,
+               const std::string &running_command) {
+  std::string normalized_path = normalize_path(target_folder_path);
+
+  std::string command;
+
+#ifdef _WIN32
+  command =
+      "cmd /C \"cd /d " + normalized_path + " && " + running_command + "\"";
+#else
+  command = "cd " + normalized_path + " && " + running_command;
+#endif
+
+  std::cout << "Executing command: " << command << std::endl;
+
+  int result = std::system(command.c_str());
+
+  return result;
+}
+
+void CloudMeshPGR(MeshData &ioMesh, const std::string &algo_folder_path,
                   const std::string &tmp_folder_path) {
   const int sample_point_num = 20000;
   const int wk = 7;
@@ -209,7 +242,8 @@ void CloudMeshPGR(MeshData &ioMesh, const std::string &pgr_folder_path,
     command += " --cpu";
   }
 
-  const int result_state = system(command.c_str());
+  const int result_state =
+      runPython(algo_folder_path + "param-gauss-recon/", command);
 
   if (result_state != 0) {
     std::cerr << "Error executing command: " << command << std::endl;
