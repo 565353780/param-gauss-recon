@@ -1,5 +1,62 @@
 # Param Gauss Recon
 
+## 快速部署
+
+### 0. 系统准备
+
+```bash
+cmake
+visual studio terminal # for win only
+```
+
+### 1. 下载conda环境包
+
+```bash
+# linux:
+conda-amcax.tar.gz
+->
+param-gauss-recon/3rd/conda-amcax.tar.gz
+```
+
+```bash
+# win:
+conda-amcax-win.tar.gz
+->
+param-gauss-recon/3rd/conda-amcax-win.tar.gz
+```
+
+### 2. 恢复conda环境
+
+```bash
+./unpack.sh # or .bat for windows
+```
+
+### 3. 编译必要依赖
+
+```bash
+./compile_zlib.sh # or .bat for windows, use Developer PowerShell for VS
+./compile_pgr.sh # or .bat for windows, use Developer PowerShell for VS
+```
+
+### 4. 编译可执行Demo
+
+```bash
+./compile_simple.sh # or .bat for windows, use Developer PowerShell for VS
+```
+
+### 5. 运行可执行Demo
+
+```bash
+# linux
+source ./3rd/conda-amcax/bin/activate
+./simple_cpp/build/PGRSimpleCall
+# win, must use cmd since it have "call" command
+call .\3rd\conda-amcax-win\Scripts\activate.bat
+.\simple_cpp\build\PGRSimpleCall.exe
+```
+
+后面的内容为从0部署，仅供参考
+
 ## Source
 
 ```bash
@@ -21,8 +78,9 @@ https://github.com/isl-org/Open3D/releases/download/v0.19.0/open3d-devel-windows
 conda create -n pgr python=3.10
 conda activate pgr
 ./setup.sh
-./compile_pgr.sh # or .bat for windows
-./compile_simple.sh # or .bat for windows
+./compile_zlib.sh # or .bat for windows, use Developer PowerShell for VS
+./compile_pgr.sh # or .bat for windows, use Developer PowerShell for VS
+./compile_simple.sh # or .bat for windows, use Developer PowerShell for VS
 ```
 
 ## Run
