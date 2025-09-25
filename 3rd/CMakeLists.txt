@@ -12,6 +12,7 @@ include_directories(
     PGR/include
     cnpy
     CLI11
+    zlib
 )
 
 link_directories(${ZLIB_ROOT})
